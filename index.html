@@ -78,8 +78,9 @@ textarea{resize:vertical;min-height:120px}
 .recstate{min-height:1.4em;color:var(--bad);font-weight:800}
 .clip{border:2px solid var(--line);border-radius:16px;padding:10px 12px}
 .clip audio{width:100%;margin-top:6px;display:block}
-.chk{display:flex;gap:8px;align-items:center;justify-content:center;font-weight:700;margin:6px 0}
-.chk input{width:22px;height:22px}
+.seg.two{grid-template-columns:1fr 1fr}
+.meter{height:10px;max-width:220px;margin:6px auto 0;background:var(--line);border-radius:99px;overflow:hidden}.meter>i{display:block;height:100%;width:0;background:var(--ok);transition:width .1s}
+#trState:empty{display:none}
 
 /* 책 */
 .hero{text-align:center}.hero .emoji{font-size:3.4rem;line-height:1.2}
@@ -154,13 +155,20 @@ details.card summary{font-weight:800;cursor:pointer}
       <div class="fld" id="lvLabel">누가 보나요?
         <div class="seg" id="lvSeg" role="group" aria-labelledby="lvLabel"></div>
       </div>
+      <div class="fld" id="modeLabel">어떻게 받아 적을까요?
+        <div class="seg two" id="modeSeg" role="group" aria-labelledby="modeLabel">
+          <button data-act="mode" data-mode="rec"><b>🎧</b>녹음하기<br><small>녹음 → AI가 글자로 (추천)</small></button>
+          <button data-act="mode" data-mode="stt"><b>⚡</b>바로 받아쓰기<br><small>녹음 없이 글자만</small></button>
+        </div>
+      </div>
       <div class="micwrap">
         <button class="mic" id="micRead" data-act="mic" aria-pressed="false" aria-label="음성 인식 시작 또는 멈춤">🎙️</button>
         <div class="miclabel" data-off="눌러서 책을 읽어 주세요" data-on="듣고 있어요… 다 읽으면 한 번 더 눌러요">눌러서 책을 읽어 주세요</div>
         <div class="interim" id="rdInterim" aria-live="polite"></div>
         <div class="recstate" id="recState" aria-live="polite"></div>
-        <label class="chk" id="recWrap"><input type="checkbox" id="chkRec"> <span>🎧 목소리도 녹음해서 저장하기</span></label>
+        <div class="meter" id="recMeter" hidden><i></i></div>
       </div>
+      <div class="note warn" id="trState" aria-live="polite"></div>
       <div id="draftClips"></div>
       <label class="fld">읽은 내용 <small>(잘못 들린 글자는 고칠 수 있어요)</small>
         <textarea id="rdText" rows="9" placeholder="여기에 읽은 내용이 글자로 나타나요. 직접 쓰거나 붙여 넣어도 돼요."></textarea>
@@ -253,7 +261,7 @@ details.card summary{font-weight:800;cursor:pointer}
 /* ============================== 기본 설정 ============================== */
 // (선택) 웹 앱 주소를 여기에 붙여 넣으면 설정 화면에 입력하지 않아도 됩니다. Code.gs와 연결하는 곳은 이곳(또는 ⚙️ 설정) 하나뿐이에요.
 // 접속 코드와 API 키는 절대 여기에 쓰지 마세요(GitHub에 공개됩니다).
-const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwQEzWrj9CTCYt8Kwvembj49Vk1T0RVVsrFb4E6w9KltwHbvtyNhLKmSVMm6DUfjMg/exec';
+const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwzlSeTN6ew763Q7q1yNc1TkvUHtAAwMCLfJeeVReZzRfSpnT-wg5L7JDcO7_XLnDQ/exec';
 const LEVELS = {
   toddler: { icon: '🧸', label: '유아', hint: '4~7세' },
   low:     { icon: '🎒', label: '초등 저학년', hint: '1~3학년' },
@@ -404,7 +412,17 @@ const recorder = {
     let mr;
     try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 }); }
     catch (_) { mr = new MediaRecorder(stream); }
-    const sess = { mr, stream, chunks: [], t0: Date.now(), t1: 0, len0: $('#rdText').value.length };
+    const sess = { mr, stream, chunks: [], t0: Date.now(), t1: 0, len0: $('#rdText').value.length, peak: 0 };
+    try {   // 소리 크기 막대: 마이크에 소리가 실제로 들어오는지 눈으로 확인
+      const AC = window.AudioContext || window.webkitAudioContext, ac = new AC(), an = ac.createAnalyser();
+      an.fftSize = 1024; ac.createMediaStreamSource(stream).connect(an); ac.resume && ac.resume().catch(() => {});
+      const buf = new Float32Array(an.fftSize);
+      sess.ac = ac; sess.meter = setInterval(() => {
+        if (ac.state !== 'running') return; sess.measured = true;
+        an.getFloatTimeDomainData(buf); let m = 0; for (const v of buf) m = Math.max(m, Math.abs(v));
+        sess.peak = Math.max(sess.peak, m); const bar = $('#recMeter > i'); if (bar) bar.style.width = Math.min(100, m * 250) + '%';
+      }, 100);
+    } catch (_) { /* 소리 막대 없이 녹음만 */ }
     sess.done = new Promise(r => sess.resolve = r);
     mr.ondataavailable = e => { if (e.data && e.data.size) sess.chunks.push(e.data); };
     mr.onstop = () => this.save(sess);
@@ -415,7 +433,7 @@ const recorder = {
   stop() {
     const sess = this.sess; this.on = false; this.sess = null; clearInterval(this.timer); this.paint();
     if (!sess) return Promise.resolve();
-    sess.t1 = Date.now();
+    sess.t1 = Date.now(); clearInterval(sess.meter); try { sess.ac && sess.ac.close(); } catch (_) {}
     try { if (sess.mr.state !== 'inactive') sess.mr.stop(); else this.save(sess); } catch (_) { this.save(sess); }
     sess.stream.getTracks().forEach(t => t.stop());
     return Promise.race([sess.done, new Promise(r => setTimeout(r, 4000))]);
@@ -426,17 +444,22 @@ const recorder = {
       const dur = ((sess.t1 || Date.now()) - sess.t0) / 1000;
       if (!sess.chunks.length || dur < 1) return;
       const type = sess.mr.mimeType || sess.chunks[0].type || 'audio/webm';
-      const clip = { id: uid(), bookId: 'draft', blob: new Blob(sess.chunks, { type }), mime: type, dur: Math.round(dur), at: sess.t0, uploaded: false, url: '' };
+      const quiet = sess.measured && sess.peak < 0.02;
+      const clip = { id: uid(), bookId: 'draft', blob: new Blob(sess.chunks, { type }), mime: type, dur: Math.round(dur), at: sess.t0, uploaded: false, url: '', peak: sess.measured ? sess.peak : null };
       await DB.putClip(clip);
       if (state.view === 'read') paintDraftClips();
-      // 녹음하는 동안 글자가 거의 안 들어왔으면(음성 인식이 막힌 기기) 녹음을 글자로 자동 변환
-      const got = $('#rdText').value.length - sess.len0;
-      if (got < 10 && aiReady() && state.view === 'read' && !state.making) { sess.resolve(); transcribeClip(clip); }
-      else toast('🎧 녹음을 저장했어요. (' + fmtDur(dur) + ')');
+      if (quiet) trNote('⚠️ 녹음 소리가 아주 작아요. 다른 앱(통화·음성 비서 등)이 마이크를 쓰고 있지 않은지 확인하고, 휴대폰을 입 가까이 두고 읽어 주세요.');
+      // 녹음 모드: 멈추면 바로 AI가 글자로 바꿔 줌
+      if (aiReady() && state.view === 'read' && !state.making) { sess.resolve(); transcribeClip(clip); }
+      else toast('🎧 녹음을 저장했어요. (' + fmtDur(dur) + ')' + (aiReady() ? '' : ' 글자로 바꾸려면 설정에서 AI를 연결해 주세요.'), 5000);
     } catch (_) { toast('녹음을 저장하지 못했어요. 저장 공간을 확인해 주세요.', 5000); }
     finally { sess.resolve(); }
   },
-  paint() { const el = $('#recState'); if (el) el.textContent = this.on && this.sess ? '● 녹음 중 ' + fmtDur((Date.now() - this.sess.t0) / 1000) : ''; }
+  paint() {
+    const el = $('#recState'), m = $('#recMeter');
+    if (el) el.textContent = this.on && this.sess ? '● 녹음 중 ' + fmtDur((Date.now() - this.sess.t0) / 1000) + ' · 소리 막대가 움직이면 잘 녹음되고 있어요' : '';
+    if (m) { m.hidden = !(this.on && this.sess); if (m.hidden) m.firstChild.style.width = '0'; }
+  }
 };
 
 /* 녹음 목록 그리기 (재생 · 기기에 저장 · 드라이브 상태) */
@@ -448,10 +471,11 @@ function clipHtml(c, i, title) {
     : c.tooBig ? '<small class="muted">파일이 커서 드라이브에는 못 올렸어요. [💾 저장]을 눌러 주세요.</small>'
     : driveOn() && c.bookId !== 'draft' ? '<small class="muted">☁️ 드라이브 저장 대기 중</small>' : '';
   const tr = c.bookId === 'draft' ? `<button class="btn ${c.transcribed ? 'alt' : 'teal'} sm" data-act="transcribe" data-id="${esc(c.id)}" style="margin-top:6px">${c.transcribed ? '✅ 글자로 바꿈 · 다시 가져오기' : '📝 이 녹음을 글자로 가져오기'}</button>` : '';
+  const quiet = c.peak != null && c.peak < 0.02 ? '<small style="color:var(--bad);font-weight:700">⚠️ 소리가 거의 없는 녹음이에요</small>' : '';
   return `<div class="clip"><div class="row between"><b>🎧 ${i + 1}번 녹음 · ${fmtDur(c.dur)}</b>
     <span class="row" style="gap:6px"><a class="btn alt sm" href="${u}" download="${esc(fileName(title) + '_녹음' + (i + 1) + '.' + extOf(c.mime))}">💾 저장</a>
     <button class="btn alt sm" data-act="delClip" data-id="${esc(c.id)}" aria-label="녹음 지우기">🗑️</button></span></div>
-    <audio controls preload="metadata" src="${u}"></audio>${tr}${cloud}</div>`;
+    <audio controls preload="metadata" src="${u}"></audio>${quiet}${tr}${cloud}</div>`;
 }
 async function paintDraftClips() {
   const el = $('#draftClips'); if (!el) return;
@@ -469,22 +493,27 @@ async function paintBookClips(b) {
 }
 /* 녹음 → 글자 (Code.gs가 Gemini로 받아 적음). 결과는 '읽은 내용' 칸 끝에 이어 붙여요. */
 let transcribing = false;
+function trNote(msg) { const el = $('#trState'); if (el) el.textContent = msg || ''; if (msg) toast(msg.replace(/^⚠️ /, ''), 6500); }
 async function transcribeClip(c) {
   if (!aiReady()) { toast('녹음을 글자로 바꾸려면 설정에서 AI를 먼저 연결해 주세요.', 5000); return; }
-  if (transcribing) return; transcribing = true;
+  if (transcribing) return; transcribing = true; trNote('');
   busy(`녹음(${fmtDur(c.dur)})을 글자로 바꾸는 중… 길이에 따라 10초~1분 걸려요`);
   try {
     const data = await blobToB64(c.blob);
     if (data.length > 14 * 1024 * 1024) throw new Error('녹음이 너무 길어요. 5~10분씩 나눠서 녹음해 주세요.');
     const r = await api('transcribe', { mime: c.mime, data }, 240000);
     const t = (r.text || '').trim();
-    if (!t) { toast('녹음에서 책 읽는 소리를 찾지 못했어요. 마이크 가까이에서 또박또박 읽어 주세요.', 6000); return; }
+    if (!t) { trNote('⚠️ AI가 녹음에서 책 읽는 소리를 찾지 못했어요.' + (r.reason ? ` (이유: ${r.reason})` : '') + ' 녹음을 재생해서 목소리가 들리는지 확인해 주세요.'); return; }
     const ta = $('#rdText');
     ta.value = (ta.value.trim() ? ta.value.replace(/\s+$/, '') + ' ' : '') + t; saveDraft();
     c.transcribed = true; await DB.putClip(c);
     if (state.view === 'read') paintDraftClips();
     toast(`📝 ${t.length}자를 가져왔어요. 틀린 글자는 고친 뒤 [이야기 만들기]를 눌러요.`, 5000);
-  } catch (e) { toast(e.message, 6000); }
+  } catch (e) {
+    trNote('⚠️ ' + (e.code === 'BAD_REQUEST' && /알 수 없는/.test(e.message)
+      ? '서버(Code.gs)가 예전 버전이에요. Apps Script에서 [배포 관리 → ✏️ → 새 버전]으로 다시 배포해 주세요.'
+      : '글자로 바꾸지 못했어요: ' + e.message));
+  }
   finally { transcribing = false; unbusy(); }
 }
 const blobToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
@@ -645,13 +674,25 @@ function enterRead() {
   $('#lvSeg').innerHTML = Object.entries(LEVELS).map(([k, v]) =>
     `<button data-act="level" data-level="${k}" aria-pressed="${cfg.level === k}"><b>${v.icon}</b>${v.label}<br><small>${v.hint}</small></button>`).join('');
   updateCount();
-  $('#recWrap').hidden = !recorder.ok; $('#chkRec').checked = cfg.recAudio;
-  paintDraftClips();
+  if (!recorder.ok) cfg.recAudio = false; else if (!SRC) cfg.recAudio = true;
+  paintMode(); trNote(''); paintDraftClips();
   const ios = /iP(hone|ad|od)/.test(navigator.userAgent), android = /Android/.test(navigator.userAgent);
   $('#rdNote').textContent = !SRC ? '이 브라우저는 음성 인식을 지원하지 않아요. 키보드의 🎤 받아쓰기를 쓰거나 글을 직접 입력해 주세요.' + (recorder.ok ? ' 녹음은 할 수 있어요.' : '')
     : ios ? '아이폰은 음성 인식이 불안정할 수 있어요. 잘 안 되면 키보드의 🎤 받아쓰기를 이용해 주세요.'
-    : android && cfg.recAudio ? '일부 안드로이드 기기는 녹음하는 동안 바로 글자가 안 나와요. 그럴 땐 녹음을 멈추면 자동으로 녹음을 글자로 바꿔 줘요.'
     : '조용한 곳에서 또박또박 읽으면 더 정확해요. 읽는 동안 화면은 켜져 있어요.';
+}
+function paintMode() {
+  $$('#modeSeg button').forEach(b => {
+    const on = (b.dataset.mode === 'rec') === !!cfg.recAudio;
+    b.setAttribute('aria-pressed', String(on));
+    b.disabled = b.dataset.mode === 'rec' ? !recorder.ok : !SRC;
+  });
+}
+async function recToggle(el) {
+  if (recorder.on) { await mic.stop(); return; }
+  mic.btn = el; mic.ta = $('#rdText'); mic.interimEl = null;
+  if (!(await recorder.start())) return;
+  mic.ui(true); mic.lock();
 }
 function updateCount() { const n = $('#rdText').value.length; $('#rdCount').textContent = n ? n + '자' : ''; }
 function saveDraft() { LS.set('sb_draft', { title: $('#rdTitle').value, text: $('#rdText').value }); updateCount(); }
@@ -891,7 +932,7 @@ async function testConn() {
   if (!okUrl(cfg.url)) { st.textContent = '주소 형식을 확인해 주세요.'; return; }
   if (!cfg.code) { st.textContent = '접속 코드를 입력해 주세요.'; return; }
   st.textContent = '연결하는 중…';
-  try { const r = await api('ping', { deep: true }, 60000); st.textContent = `✅ 연결 성공! AI 모델: ${r.textModel} / 그림 모델: ${r.imageModel}` + (r.sheet ? ` / 기록 시트: ${r.sheet}` : ' / ⚠️ 기록할 시트가 없어요(Code.gs를 시트에서 열었는지 확인)'); paintSync(); kick(); }
+  try { const r = await api('ping', { deep: true }, 60000); st.textContent = `✅ 연결 성공! AI 모델: ${r.textModel} / 그림 모델: ${r.imageModel}` + (r.version ? ` / 서버 버전: ${r.version}` : ' / ⚠️ 서버가 예전 버전이에요(Apps Script를 새 버전으로 배포해 주세요)') + (r.sheet ? ` / 기록 시트: ${r.sheet}` : ' / ⚠️ 기록할 시트가 없어요(Code.gs를 시트에서 열었는지 확인)'); paintSync(); kick(); }
   catch (e) { st.textContent = '❌ ' + e.message; }
 }
 
@@ -926,7 +967,8 @@ const ACT = {
   newBook: () => go('read'),
   openBook: async el => { const b = (await DB.all()).find(x => x.id === el.dataset.id); if (!b) return; state.book = b; state.slide = 0; go('book'); },
   level: el => { cfg.level = el.dataset.level; saveCfg(); $$('#lvSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === el))); },
-  mic: el => mic.toggle($('#rdText'), el, $('#rdInterim'), true),
+  mic: el => (cfg.recAudio && recorder.ok) ? recToggle(el) : mic.toggle($('#rdText'), el, $('#rdInterim'), false),
+  mode: async el => { if (recorder.on || mic.want) await mic.stop(); cfg.recAudio = el.dataset.mode === 'rec'; saveCfg(); paintMode(); },
   micIdea: el => mic.toggle($('#ideaText'), el, $('#ideaInterim')),
   sample: () => { $('#rdText').value = SAMPLE_TEXT; if (!$('#rdTitle').value) $('#rdTitle').value = '토끼와 거북이'; saveDraft(); },
   clearRead: async () => {
@@ -984,7 +1026,6 @@ const ACT = {
 document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el && ACT[el.dataset.act]) ACT[el.dataset.act](el, e); });
 ['#rdTitle', '#rdText'].forEach(s => $(s).addEventListener('input', saveDraft));
 ['#setUrl', '#setCode', '#setNick', '#setSpeak', '#setBackup', '#setConsent', '#setDrive'].forEach(s => $(s).addEventListener('input', onSettingsInput));
-$('#chkRec').addEventListener('change', e => { cfg.recAudio = e.target.checked; saveCfg(); });
 addEventListener('pagehide', () => { mic.stop(); tts.stop(); });
 if (tts.ok) speechSynthesis.getVoices();   // 일부 브라우저에서 목소리 목록을 미리 불러오기
 
