@@ -1,0 +1,797 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FF7A59">
+<meta name="robots" content="noindex">
+<title>이야기친구</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E📖%3C/text%3E%3C/svg%3E">
+<!--
+  이야기친구(StoryBuddy) - index.html (파일 1개짜리 웹앱)
+  GitHub Pages에 올리고, 같은 폴더의 Code.gs(Apps Script 웹 앱)와 연결해서 씁니다.
+  연결 주소와 접속 코드는 ⚙️ 설정에서 입력하며 이 기기에만 저장됩니다(코드에 넣지 마세요).
+-->
+<style>
+:root{
+  color-scheme:light;
+  --bg:#FFF7EA; --card:#fff; --ink:#3B2F2A; --muted:#85746A; --line:#F0DFC8;
+  --brand:#FF7A59; --teal:#1E9E92; --violet:#7357F0; --ok:#1F9D63; --bad:#E5484D; --warn:#FFF0C7;
+  --shadow:0 6px 18px rgba(120,80,40,.13); --r:22px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;padding-bottom:env(safe-area-inset-bottom)}
+#app{max-width:560px;margin:0 auto;min-height:100dvh}
+.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;padding:10px 12px;background:rgba(255,247,234,.94);backdrop-filter:blur(6px);border-bottom:2px solid var(--line)}
+.top h1{flex:1;margin:0;font-size:1.2rem;font-weight:800;text-align:center}
+.icon{width:46px;height:46px;border:0;border-radius:14px;background:#fff;font-size:1.3rem;box-shadow:var(--shadow);cursor:pointer}
+.icon[hidden]{display:inline-block;visibility:hidden}
+.view{padding:16px 16px 48px}
+.view[hidden]{display:none}
+h2{font-size:1.35rem;margin:.2em 0 .4em;line-height:1.35}
+p{margin:.4em 0}
+small,.muted{color:var(--muted)}
+.card{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:18px;margin:14px 0}
+.note{background:#fff;border:2px dashed var(--line);border-radius:16px;padding:10px 14px;font-size:.92rem;color:var(--muted);margin:12px 0}
+.note.warn{background:var(--warn);border-color:#F4D57E;color:#6B5200}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:56px;padding:0 20px;border:0;border-radius:18px;background:var(--brand);color:#fff;font:inherit;font-weight:800;box-shadow:0 4px 0 rgba(0,0,0,.14);cursor:pointer}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.14)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.alt{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none;min-height:48px}
+.btn.teal{background:var(--teal)} .btn.violet{background:var(--violet)}
+.btn.block{display:flex;width:100%} .btn.big{min-height:66px;font-size:1.15rem}
+.btn small{color:rgba(255,255,255,.85);font-weight:600}
+.stack>*+*{margin-top:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row.between{justify-content:space-between}
+:focus-visible{outline:4px solid #6AA9FF;outline-offset:2px}
+input[type=text],input[type=url],input[type=password],textarea{width:100%;font:inherit;padding:12px 14px;border:2px solid var(--line);border-radius:16px;background:#fff;color:var(--ink)}
+textarea{resize:vertical;min-height:120px}
+.fld{display:block;margin:14px 0;font-weight:700}
+.fld>input,.fld>textarea{margin-top:6px;font-weight:400}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:6px}
+.seg button{border:2px solid var(--line);background:#fff;border-radius:16px;padding:10px 4px;font:inherit;font-weight:700;font-size:.9rem;cursor:pointer;line-height:1.3}
+.seg button b{display:block;font-size:1.6rem}
+.seg button[aria-pressed=true]{border-color:var(--brand);background:#FFEDE6;box-shadow:0 0 0 3px #FFD3C6}
+
+/* 홈 */
+.hero-cta{margin:6px 0 18px}
+.shelf{display:grid;gap:12px}
+.book{display:flex;gap:14px;align-items:center;width:100%;text-align:left;border:0;background:#fff;border-radius:20px;padding:12px 14px;box-shadow:var(--shadow);font:inherit;cursor:pointer;color:inherit}
+.book .cv{flex:none;width:58px;height:58px;border-radius:16px;background:linear-gradient(135deg,#FFE3B8,#FFD0E0);display:grid;place-items:center;font-size:1.9rem}
+.book .tt{font-weight:800;line-height:1.3}
+.badge{display:inline-block;font-size:.78rem;font-weight:700;padding:1px 9px;border-radius:99px;background:#F3ECFF;color:#5B44C8;margin-right:4px}
+.empty{text-align:center;padding:28px 10px;color:var(--muted)} .empty .em{font-size:3.4rem}
+
+/* 읽기 */
+.micwrap{text-align:center;margin:18px 0 8px}
+.mic{width:116px;height:116px;border-radius:50%;border:0;background:var(--brand);color:#fff;font-size:3rem;box-shadow:0 8px 0 rgba(0,0,0,.14),var(--shadow);cursor:pointer}
+.mic.on{background:var(--bad);animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(229,72,77,.5)}70%{box-shadow:0 0 0 24px rgba(229,72,77,0)}100%{box-shadow:0 0 0 0 rgba(229,72,77,0)}}
+.miclabel{margin-top:14px;font-weight:700}
+.interim{min-height:1.6em;color:var(--muted);font-style:italic}
+
+/* 책 */
+.hero{text-align:center}.hero .emoji{font-size:3.4rem;line-height:1.2}
+.theme{background:#EAF8F5;border-radius:14px;padding:8px 12px;font-weight:700;color:#0F6E65}
+.chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin:8px 0 16px}
+.chip{background:#fff;border:2px solid var(--line);border-radius:99px;padding:2px 14px;font-weight:700}
+details.card summary{font-weight:800;cursor:pointer}
+
+/* 슬라이드 */
+.slide{background:#fff;border-radius:28px;box-shadow:var(--shadow);overflow:hidden;touch-action:pan-y}
+.pic{position:relative;aspect-ratio:4/3;background:linear-gradient(135deg,#FFE3B8,#FFD0E0);display:grid;place-items:center;font-size:96px}
+.pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pic .draw{position:absolute;right:10px;bottom:10px;font-size:.85rem;background:rgba(255,255,255,.92);border-radius:99px;padding:3px 12px;font-weight:700}
+.cap{padding:18px 20px 24px;font-size:1.3rem;font-weight:700;line-height:1.65}
+.cap .sub{font-size:1rem;font-weight:600;color:var(--muted)}
+.dots{display:flex;justify-content:center;gap:7px;margin:14px 0}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--line)} .dots i.on{background:var(--brand);transform:scale(1.3)}
+.nav{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+[data-lv=toddler] .cap{font-size:1.55rem} [data-lv=toddler] .qtxt{font-size:1.6rem} [data-lv=toddler] .opt{font-size:1.35rem}
+
+/* 퀴즈 */
+.bar{height:12px;background:var(--line);border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;background:var(--teal);transition:width .3s}
+.qtxt{font-size:1.35rem;font-weight:800;line-height:1.5;margin:6px 0}
+.opts{display:grid;gap:12px;margin:16px 0}
+.opt{min-height:64px;text-align:left;border:3px solid var(--line);background:#fff;border-radius:18px;padding:12px 16px;font:inherit;font-weight:700;cursor:pointer;color:inherit}
+.opt.wrong{border-color:var(--bad);background:#FFEDEE;opacity:.75}
+.opt.right{border-color:var(--ok);background:#E7F8EF}
+.fb{border-radius:16px;padding:12px 14px;font-weight:700}.fb.ok{background:#E7F8EF;color:#116B43}.fb.hint{background:var(--warn);color:#6B5200}
+.stars{font-size:3rem;text-align:center;letter-spacing:6px}
+.pop{animation:pop .5s}@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+
+/* 이어가기 */
+.seg-item{background:#fff;border-radius:22px;box-shadow:var(--shadow);overflow:hidden;margin:14px 0}
+.seg-item .pic{font-size:70px}
+.seg-item .idea{background:#F3ECFF;color:#4B36B3;font-weight:700;padding:8px 16px;font-size:.95rem}
+.seg-item .txt{padding:14px 18px 16px;font-weight:600}
+.choices{display:grid;gap:10px;margin:10px 0}
+.choice{display:flex;gap:12px;align-items:center;text-align:left;width:100%;border:3px solid #DCD2FF;background:#fff;border-radius:18px;padding:12px 14px;font:inherit;font-weight:700;cursor:pointer;color:inherit;min-height:60px}
+.choice b{font-size:1.7rem}
+.q-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
+.q-chips button{border:2px solid #DCD2FF;background:#fff;border-radius:99px;padding:6px 14px;font:inherit;font-size:.9rem;font-weight:600;cursor:pointer;color:inherit;text-align:left}
+.mini-mic{width:56px;min-height:56px;padding:0;font-size:1.5rem;flex:none}
+.mini-mic.on{background:var(--bad);animation:pulse 1.4s infinite;color:#fff}
+.spin{width:44px;height:44px;border-radius:50%;border:5px solid #fff;border-top-color:var(--brand);animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
+#busy{position:fixed;inset:0;z-index:20;background:rgba(59,47,42,.55);display:grid;place-content:center;justify-items:center;gap:14px;color:#fff;font-weight:800;text-align:center;padding:24px}
+#busy[hidden]{display:none}
+#toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(92vw,520px);background:#3B2F2A;color:#fff;padding:12px 18px;border-radius:16px;font-weight:700;font-size:.95rem;z-index:30;box-shadow:var(--shadow)}
+#toast[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <button class="icon" id="btnBack" data-act="back" aria-label="뒤로 가기" hidden>←</button>
+    <h1 id="ttl">📖 이야기친구</h1>
+    <button class="icon" data-act="settings" aria-label="설정">⚙️</button>
+  </header>
+
+  <main>
+    <!-- 홈 -->
+    <section class="view" id="v-home" hidden></section>
+
+    <!-- 읽기 -->
+    <section class="view" id="v-read" hidden>
+      <label class="fld">책 제목
+        <input id="rdTitle" type="text" maxlength="60" placeholder="예) 토끼와 거북이" autocomplete="off">
+      </label>
+      <div class="fld" id="lvLabel">누가 보나요?
+        <div class="seg" id="lvSeg" role="group" aria-labelledby="lvLabel"></div>
+      </div>
+      <div class="micwrap">
+        <button class="mic" id="micRead" data-act="mic" aria-pressed="false" aria-label="음성 인식 시작 또는 멈춤">🎙️</button>
+        <div class="miclabel" data-off="눌러서 책을 읽어 주세요" data-on="듣고 있어요… 다 읽으면 한 번 더 눌러요">눌러서 책을 읽어 주세요</div>
+        <div class="interim" id="rdInterim" aria-live="polite"></div>
+      </div>
+      <label class="fld">읽은 내용 <small>(잘못 들린 글자는 고칠 수 있어요)</small>
+        <textarea id="rdText" rows="9" placeholder="여기에 읽은 내용이 글자로 나타나요. 직접 쓰거나 붙여 넣어도 돼요."></textarea>
+      </label>
+      <div class="row between"><span id="rdCount" class="muted"></span>
+        <span class="row"><button class="btn alt" data-act="sample">예시 글</button><button class="btn alt" data-act="clearRead">지우기</button></span></div>
+      <div class="stack" style="margin-top:14px">
+        <button class="btn block big" data-act="makeStory">✨ 이야기 만들기</button>
+        <p class="note" id="rdNote"></p>
+      </div>
+    </section>
+
+    <!-- 책 / 슬라이드 / 퀴즈 -->
+    <section class="view" id="v-book" hidden></section>
+    <section class="view" id="v-slides" hidden></section>
+    <section class="view" id="v-quiz" hidden></section>
+
+    <!-- 이야기 이어가기 -->
+    <section class="view" id="v-imagine" hidden>
+      <div id="segs"></div>
+      <div id="choicePanel"></div>
+      <div class="card">
+        <div style="font-weight:800">✏️ 내 생각으로 이어 볼까요?</div>
+        <div class="q-chips" id="qChips"></div>
+        <div class="row" style="margin-top:8px;align-items:flex-start">
+          <textarea id="ideaText" rows="3" style="min-height:84px" placeholder="예) 토끼가 로켓 신발을 신었어요!"></textarea>
+          <button class="btn alt mini-mic" id="micIdea" data-act="micIdea" aria-pressed="false" aria-label="말로 입력">🎙️</button>
+        </div>
+        <div class="interim" id="ideaInterim" aria-live="polite"></div>
+        <label class="row" style="margin:6px 0"><input type="checkbox" id="chkDraw" style="width:22px;height:22px"> <span>🎨 그림도 그리기</span></label>
+        <button class="btn violet block" data-act="sendIdea">이 생각으로 이어가기</button>
+      </div>
+      <button class="btn alt block" data-act="resetStory">처음부터 다시 상상하기</button>
+    </section>
+
+    <!-- 설정 -->
+    <section class="view" id="v-settings" hidden>
+      <div class="card stack">
+        <h2 style="margin:0">🔌 AI 연결</h2>
+        <p class="muted" style="margin:0">Code.gs를 웹 앱으로 배포한 뒤 받은 주소와 접속 코드를 넣어요. 연결 없이도 샘플로 체험할 수 있어요.</p>
+        <label class="fld" style="margin:0">웹 앱 주소 (…/exec)
+          <input id="setUrl" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off">
+        </label>
+        <div id="urlWarn" class="note warn" hidden>주소는 https://script.google.com/…/exec 형태여야 해요.</div>
+        <label class="fld" style="margin:0">접속 코드
+          <input id="setCode" type="password" autocomplete="off">
+        </label>
+        <button class="btn teal block" data-act="testConn">연결 테스트</button>
+        <div id="connState" class="note" aria-live="polite">아직 테스트하지 않았어요.</div>
+      </div>
+      <div class="card stack">
+        <h2 style="margin:0">🙂 사용 설정</h2>
+        <label class="fld" style="margin:0">별명 <small>(실명 대신 별명을 쓰세요)</small>
+          <input id="setNick" type="text" maxlength="20" autocomplete="off" placeholder="예) 튼튼이">
+        </label>
+        <label class="row"><input type="checkbox" id="setSpeak" style="width:22px;height:22px"> <span>슬라이드·퀴즈를 소리로 읽어 주기</span></label>
+      </div>
+      <div class="card stack">
+        <h2 style="margin:0">📊 구글 시트에 기록</h2>
+        <p class="muted" style="margin:0">켜 두면 읽은 내용(글자), 퀴즈 결과, 아이가 이어 쓴 이야기가 선생님·보호자의 Google 시트에 계속 쌓여요. 인터넷이 끊겨도 모아 두었다가 나중에 보내요. 음성 녹음과 그림은 보내지 않아요.</p>
+        <label class="row"><input type="checkbox" id="setBackup" style="width:22px;height:22px"> <span>시트에 기록하기</span></label>
+        <label class="row" style="align-items:flex-start"><input type="checkbox" id="setConsent" style="width:22px;height:22px;margin-top:4px"> <span>보호자가 위 내용을 이해하고 동의했어요.</span></label>
+        <div id="syncState" class="note" aria-live="polite"></div>
+        <div class="row"><button class="btn alt" data-act="syncNow">지금 보내기</button><button class="btn alt" data-act="uploadAll">서재 전체 올리기</button></div>
+      </div>
+      <div class="card stack">
+        <h2 style="margin:0">🔗 보호자에게 나눠 주기</h2>
+        <p class="muted" style="margin:0">연결 주소와 접속 코드가 담긴 링크를 만들어요. 보호자가 이 링크로 열면 설정 없이 바로 쓸 수 있어요. 접속 코드가 들어 있으니 우리 반·가족에게만 보내 주세요.</p>
+        <button class="btn alt block" data-act="shareLink">링크 복사하기</button>
+      </div>
+      <div class="note">
+        <b>개인정보 안내</b><br>
+        · 음성은 브라우저의 음성 인식(Chrome은 Google 서버)이 글자로 바꿔 주며, 앱은 녹음 파일을 저장하지 않아요.<br>
+        · 이야기 만들기·그림·퀴즈를 쓰면 읽은 글이 AI(Google Gemini)로 전송돼요. 이름·전화번호 같은 개인정보는 읽지 마세요.<br>
+        · 서재는 이 기기의 브라우저에만 저장돼요. 기기를 바꾸면 보이지 않아요.
+      </div>
+      <button class="btn alt block" data-act="wipe">🗑️ 이 기기의 서재 모두 지우기</button>
+    </section>
+  </main>
+</div>
+
+<div id="busy" hidden role="alert"><div class="spin"></div><div id="busyMsg"></div></div>
+<div id="toast" hidden role="status"></div>
+<noscript><p style="padding:20px">이 앱은 JavaScript가 필요해요.</p></noscript>
+
+<script>
+'use strict';
+/* ============================== 기본 설정 ============================== */
+// (선택) 웹 앱 주소를 여기에 붙여 넣으면 설정 화면에 입력하지 않아도 됩니다. Code.gs와 연결하는 곳은 이곳(또는 ⚙️ 설정) 하나뿐이에요.
+// 접속 코드와 API 키는 절대 여기에 쓰지 마세요(GitHub에 공개됩니다).
+const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbxRf4xyp0YzPR582cgGvGCpPIcpTwrEtzhuR4hJ06YfR4_LaK-unfrvm-NHY2mUBBQ/exec';
+const LEVELS = {
+  toddler: { icon: '🧸', label: '유아', hint: '4~7세' },
+  low:     { icon: '🎒', label: '초등 저학년', hint: '1~3학년' },
+  high:    { icon: '📚', label: '초등 고학년', hint: '4~6학년' }
+};
+const TITLES = { home: '📖 이야기친구', read: '🎙️ 책 읽기', book: '📕 내 책', slides: '🖼️ 그림 슬라이드', quiz: '❓ 퀴즈', imagine: '✨ 이야기 이어가기', settings: '⚙️ 설정' };
+const SAMPLE_TEXT = '옛날 옛적에 토끼와 거북이가 살았어요. 토끼는 발이 빨라서 늘 자랑을 했어요. 어느 날 토끼가 거북이에게 말했어요. 거북이야, 우리 달리기 시합 할래? 거북이는 고개를 끄덕였어요. 좋아, 해 보자. 시합이 시작되자 토끼는 쌩쌩 달려 나갔어요. 거북이는 엉금엉금 한 걸음씩 걸었어요. 토끼는 한참 앞서가다가 나무 그늘에서 쿨쿨 낮잠을 잤어요. 그동안 거북이는 쉬지 않고 계속 걸었어요. 잠에서 깬 토끼가 깜짝 놀라 달려갔지만, 거북이가 먼저 결승선에 도착했어요. 거북이는 꾸준히 걸어서 이겼답니다.';
+
+/* ============================== 도우미 ============================== */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (_) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} },
+  del(k) { try { localStorage.removeItem(k); } catch (_) {} }
+};
+const cfg = Object.assign({ url: DEFAULT_ENDPOINT, code: '', nick: '', level: 'toddler', autoSpeak: true, backup: false, consent: false, draw: true }, LS.get('sb_cfg', {}));
+const saveCfg = () => LS.set('sb_cfg', cfg);
+const okUrl = u => /^https:\/\/script\.google\.com\/(macros\/s\/[\w-]+\/exec|a\/macros\/[\w.-]+\/s\/[\w-]+\/exec)$/.test(String(u).trim());
+const aiReady = () => okUrl(cfg.url) && !!cfg.code;
+
+let toastT;
+function toast(msg, ms = 3200) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
+function busy(msg) { $('#busyMsg').textContent = msg; $('#busy').hidden = false; }
+function unbusy() { $('#busy').hidden = true; }
+
+/* ============================== 저장소(IndexedDB) ============================== */
+const DB = (() => {
+  let db = null, mem = null;
+  const open = () => db ? Promise.resolve(db) : new Promise((res, rej) => {
+    if (!window.indexedDB) return rej();
+    const r = indexedDB.open('storybuddy', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('books', { keyPath: 'id' });
+    r.onsuccess = () => { db = r.result; res(db); };
+    r.onerror = () => rej(r.error);
+  });
+  async function tx(mode, fn) {
+    if (!mem) { try { await open(); } catch (_) { mem = new Map(); toast('이 브라우저에서는 저장이 제한돼요. 창을 닫으면 서재가 사라질 수 있어요.', 5000); } }
+    if (mem) return fn.mem(mem);
+    return new Promise((res, rej) => {
+      const t = db.transaction('books', mode), req = fn.idb(t.objectStore('books'));
+      t.oncomplete = () => res(req && req.result); t.onerror = t.onabort = () => rej(t.error);
+    });
+  }
+  return {
+    all: () => tx('readonly', { idb: s => s.getAll(), mem: m => [...m.values()] }),
+    put: b => tx('readwrite', { idb: s => s.put(b), mem: m => m.set(b.id, b) }),
+    del: id => tx('readwrite', { idb: s => s.delete(id), mem: m => m.delete(id) }),
+    clear: () => tx('readwrite', { idb: s => s.clear(), mem: m => m.clear() })
+  };
+})();
+
+/* ============================== 서버(Code.gs) 호출 ============================== */
+class ApiError extends Error { constructor(code, msg) { super(msg); this.code = code; } }
+async function api(action, payload = {}, timeout = 90000) {
+  if (!okUrl(cfg.url) || !cfg.code) throw new ApiError('NOCONF', '설정에서 웹 앱 주소와 접속 코드를 먼저 넣어 주세요.');
+  const ctrl = new AbortController(), timer = setTimeout(() => ctrl.abort(), timeout);
+  try {
+    // text/plain 으로 보내면 브라우저 사전 확인(CORS preflight) 없이 Apps Script가 받을 수 있어요.
+    const res = await fetch(cfg.url.trim(), { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, code: cfg.code, ...payload }), signal: ctrl.signal });
+    const j = await res.json();
+    if (!j.ok) throw new ApiError(j.code || 'ERROR', j.error || '문제가 생겼어요.');
+    return j;
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    if (e.name === 'AbortError') throw new ApiError('TIMEOUT', '시간이 너무 오래 걸려요. 잠시 후 다시 해 주세요.');
+    throw new ApiError('NETWORK', '서버에 연결하지 못했어요. 인터넷과 웹 앱 주소(배포 설정: 액세스 "모든 사용자")를 확인해 주세요.');
+  } finally { clearTimeout(timer); }
+}
+
+/* ============================== 소리: 듣기(음성 인식) / 읽어 주기(TTS) ============================== */
+const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
+const mic = {
+  rec: null, want: false, ta: null, btn: null, interimEl: null, wake: null,
+  toggle(ta, btn, interimEl) { const same = this.want && this.ta === ta; if (this.want) this.stop(); if (!same) this.start(ta, btn, interimEl); },
+  start(ta, btn, interimEl) {
+    if (!SRC) { toast('이 브라우저는 음성 인식을 지원하지 않아요. 안드로이드 Chrome을 쓰거나, 키보드의 🎤 받아쓰기를 이용해 주세요.', 6500); return; }
+    Object.assign(this, { ta, btn, interimEl, want: true }); this.ui(true); this.spawn(); this.lock();
+  },
+  spawn() {
+    const r = new SRC();
+    r.lang = 'ko-KR'; r.interimResults = true; r.continuous = false; r.maxAlternatives = 1;  // 끊기면 자동으로 다시 시작(모바일에서 가장 안정적)
+    r.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) { const x = e.results[i]; x.isFinal ? this.append(x[0].transcript) : interim += x[0].transcript; }
+      if (this.interimEl) this.interimEl.textContent = interim;
+    };
+    r.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { this.want = false; toast('마이크를 허용해 주세요. (주소창 왼쪽 자물쇠 → 권한 → 마이크)', 6500); }
+      else if (e.error === 'audio-capture') { this.want = false; toast('마이크를 찾지 못했어요.'); }
+      else if (e.error === 'network') { this.want = false; toast('음성 인식 서버에 연결하지 못했어요. 인터넷을 확인해 주세요.', 5000); }
+    };
+    r.onend = () => {
+      if (this.interimEl) this.interimEl.textContent = '';
+      if (this.want) setTimeout(() => { if (this.want) this.spawn(); }, 200); else { this.ui(false); this.unlock(); }
+    };
+    this.rec = r; try { r.start(); } catch (_) {}
+  },
+  append(t) {
+    t = (t || '').trim(); if (!t || !this.ta) return;
+    const ta = this.ta; ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + ' ' : '') + t;
+    ta.dispatchEvent(new Event('input', { bubbles: true })); ta.scrollTop = ta.scrollHeight;
+  },
+  stop() { this.want = false; try { this.rec && this.rec.stop(); } catch (_) {} this.ui(false); this.unlock(); if (this.interimEl) this.interimEl.textContent = ''; },
+  ui(on) {
+    const b = this.btn; if (!b) return;
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+    const lb = b.nextElementSibling; if (lb && lb.classList.contains('miclabel')) lb.textContent = on ? lb.dataset.on : lb.dataset.off;
+  },
+  async lock() { try { this.wake = await navigator.wakeLock.request('screen'); } catch (_) {} },   // 읽는 동안 화면이 꺼지지 않게
+  unlock() { try { this.wake && this.wake.release(); } catch (_) {} this.wake = null; }
+};
+const tts = {
+  ok: 'speechSynthesis' in window,
+  speak(text) {
+    if (!this.ok || !text) return; speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = 'ko-KR'; u.rate = 0.9; u.pitch = 1.1;
+    const v = speechSynthesis.getVoices().find(v => /^ko/i.test(v.lang)); if (v) u.voice = v; speechSynthesis.speak(u);
+  },
+  stop() { if (this.ok) speechSynthesis.cancel(); }
+};
+const autoSay = t => { if (cfg.autoSpeak) tts.speak(t); };
+
+/* ============================== 이미지 줄이기(저장 공간 절약) ============================== */
+function shrink(mime, b64, maxW = 720, q = 0.78) {
+  return new Promise(res => {
+    const raw = 'data:' + mime + ';base64,' + b64, img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, maxW / img.width), c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL('image/jpeg', q));
+    };
+    img.onerror = () => res(raw); img.src = raw;
+  });
+}
+
+/* ============================== 링크로 연결 정보 받기 (#api=…&code=…) ============================== */
+(function readLinkConfig() {
+  const h = new URLSearchParams(location.hash.slice(1)), u = h.get('api'), c = h.get('code');
+  if (!u) return;
+  history.replaceState(null, '', location.pathname + location.search);   // 주소창에서 코드 지우기
+  if (!okUrl(u)) return;
+  cfg.url = u; if (c) cfg.code = c; saveCfg();
+  setTimeout(() => toast('연결 정보가 설정되었어요. ✅'), 400);
+})();
+
+/* ============================== 구글 시트 기록(대기열) ==============================
+   기록할 일이 생기면 이 기기에 먼저 쌓고(sb_outbox), 인터넷이 되면 20개씩 묶어 Code.gs로 보냅니다.
+   서버가 저장했다고 알려 준 것만 지우므로, 전송에 실패해도 기록이 사라지지 않아요. */
+const sync = {
+  q: LS.get('sb_outbox', []), last: LS.get('sb_lastsync', 0), busy: false, err: '',
+  on: () => cfg.backup && cfg.consent && aiReady(),
+  save() { LS.set('sb_outbox', this.q); },
+  push(ev) {
+    if (!this.on()) return;
+    ev.eid = uid(); ev.at = Date.now();
+    if (ev.type === 'book') this.q = this.q.filter(e => !(e.type === 'book' && e.book.id === ev.book.id));  // 책 줄은 최신 것 하나만
+    this.q.push(ev); if (this.q.length > 400) this.q = this.q.slice(-400);
+    this.save(); paintSync(); this.flush();
+  },
+  async flush() {
+    if (this.busy || !this.on() || !this.q.length || !navigator.onLine) return;
+    this.busy = true; paintSync();
+    try {
+      while (this.q.length) {
+        const r = await api('log', { nickname: cfg.nick || '친구', events: this.q.slice(0, 20) }, 60000);
+        const done = new Set(r.saved || []);
+        if (!done.size) break;
+        this.q = this.q.filter(e => !done.has(e.eid)); this.save();
+      }
+      this.last = Date.now(); LS.set('sb_lastsync', this.last); this.err = '';
+    } catch (e) {
+      this.err = e.message;
+      if (['AUTH', 'SETUP', 'NO_SHEET'].includes(e.code)) toast('시트 기록 실패: ' + e.message, 5000);
+    } finally { this.busy = false; paintSync(); }
+  }
+};
+const bookSnap = b => ({ type: 'book', book: {
+  id: b.id, title: b.analysis?.title || b.title, level: b.level, createdAt: b.createdAt, text: b.text,
+  summary: b.analysis?.summary || '', theme: b.analysis?.theme || '',
+  best: b.quizBest ?? '', lastQuiz: b.quiz ? `${b.quiz.score}/${b.quiz.total}` : '', quizCount: b.quizCount || 0,
+  scenes: (b.continuation || []).length,
+  story: (b.continuation || []).map((s, i) => `${i + 1}. ${s.idea ? '(' + s.idea + ') ' : ''}${s.story}`).join('\n')
+} });
+function record(type, b, extra = {}) {
+  if (!sync.on() || b.analysis?.demo) return;
+  if (type !== 'book') sync.push({ type, id: b.id, title: b.analysis?.title || b.title, ...extra });
+  sync.push(bookSnap(b));
+}
+function paintSync() {
+  const el = $('#syncState'); if (!el) return;
+  if (!cfg.backup) { el.textContent = '시트 기록이 꺼져 있어요.'; return; }
+  if (!cfg.consent) { el.textContent = '보호자 동의에 체크해야 기록돼요.'; return; }
+  if (!aiReady()) { el.textContent = '위의 AI 연결(주소·접속 코드)을 먼저 해 주세요.'; return; }
+  const t = sync.last ? ' · 마지막 기록 ' + new Date(sync.last).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  el.textContent = (sync.busy ? '📤 보내는 중…' : sync.q.length ? `⏳ 보내기 대기 ${sync.q.length}건` : '✅ 모두 기록됨') + t + (sync.err && sync.q.length ? ' · 오류: ' + sync.err : '');
+}
+
+/* ============================== 상태·화면 이동 ============================== */
+const state = { view: 'home', book: null, slide: 0, quiz: null, drawing: false, drawIdx: -1, imagineBusy: false };
+const stack = ['home'];
+history.replaceState({ i: 0 }, '');
+function go(v) { stack.push(v); history.pushState({ i: stack.length - 1 }, ''); showView(v); }
+function goHome() { const n = stack.length - 1; if (n > 0) history.go(-n); else showView('home'); }
+addEventListener('popstate', e => { const i = (e.state && e.state.i) || 0; stack.length = Math.min(stack.length, i + 1); showView(stack[stack.length - 1]); });
+
+const ENTER = { home: renderHome, read: enterRead, book: renderBook, slides: renderSlides, quiz: renderQuiz, imagine: enterImagine, settings: renderSettings };
+function showView(v) {
+  mic.stop(); tts.stop();
+  $$('.view').forEach(s => s.hidden = s.id !== 'v-' + v);
+  state.view = v; $('#ttl').textContent = TITLES[v]; $('#btnBack').hidden = v === 'home';
+  document.body.dataset.lv = state.book && ['book', 'slides', 'quiz', 'imagine'].includes(v) ? state.book.level : '';
+  ENTER[v](); scrollTo(0, 0);
+}
+
+/* ============================== 홈(서재) ============================== */
+async function renderHome() {
+  const books = (await DB.all()).sort((a, b) => b.createdAt - a.createdAt);
+  const el = $('#v-home');
+  el.innerHTML = `
+    <div class="hero-cta"><button class="btn block big" data-act="newBook">🎙️ 책 읽어 주기 시작</button></div>
+    ${aiReady() ? '' : `<div class="note warn">AI가 연결되지 않았어요. 지금은 <b>샘플 결과</b>로 체험할 수 있어요. <a href="#" data-act="settings">설정에서 연결하기</a></div>`}
+    <h2>📚 내 서재</h2>
+    ${books.length ? `<div class="shelf">${books.map(b => `
+      <button class="book" data-act="openBook" data-id="${esc(b.id)}">
+        <span class="cv">${esc(coverEmoji(b))}</span>
+        <span><span class="tt">${esc(b.title || '제목 없음')}</span><br>
+          <span class="badge">${esc(LEVELS[b.level]?.icon || '')} ${esc(LEVELS[b.level]?.label || '')}</span>
+          ${b.quiz ? `<span class="badge">퀴즈 ${b.quiz.score}/${b.quiz.total}</span>` : ''}
+          <small>${new Date(b.createdAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}</small></span>
+      </button>`).join('')}</div>`
+      : `<div class="empty"><div class="em">📖</div><p>아직 읽은 책이 없어요.<br>위 버튼을 눌러 첫 책을 읽어 볼까요?</p></div>`}`;
+}
+const coverEmoji = b => b.analysis?.scenes?.[0]?.emoji || '📕';
+const charStr = a => (a.characters || []).map(c => c.name + ': ' + c.look).join('; ');
+
+/* ============================== 읽기 ============================== */
+function enterRead() {
+  const d = LS.get('sb_draft', {});
+  $('#rdTitle').value = d.title || ''; $('#rdText').value = d.text || '';
+  $('#lvSeg').innerHTML = Object.entries(LEVELS).map(([k, v]) =>
+    `<button data-act="level" data-level="${k}" aria-pressed="${cfg.level === k}"><b>${v.icon}</b>${v.label}<br><small>${v.hint}</small></button>`).join('');
+  updateCount();
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent);
+  $('#rdNote').textContent = !SRC ? '이 브라우저는 음성 인식을 지원하지 않아요. 키보드의 🎤 받아쓰기를 쓰거나 글을 직접 입력해 주세요.'
+    : ios ? '아이폰은 음성 인식이 불안정할 수 있어요. 잘 안 되면 키보드의 🎤 받아쓰기를 이용해 주세요.'
+    : '조용한 곳에서 또박또박 읽으면 더 정확해요. 읽는 동안 화면은 켜져 있어요.';
+}
+function updateCount() { const n = $('#rdText').value.length; $('#rdCount').textContent = n ? n + '자' : ''; }
+function saveDraft() { LS.set('sb_draft', { title: $('#rdTitle').value, text: $('#rdText').value }); updateCount(); }
+
+async function makeStory() {
+  mic.stop();
+  const text = $('#rdText').value.trim(), title = $('#rdTitle').value.trim();
+  if (text.length < 20) { toast('조금 더 읽어 주세요. (20자 이상)'); return; }
+  const b = { id: uid(), title: title || '제목 없음', level: cfg.level, text, createdAt: Date.now(), analysis: null, images: {}, quiz: null, continuation: [], lead: null, choices: null, question: null };
+  await DB.put(b); LS.del('sb_draft'); state.book = b;
+  await analyzeBook(b, true);
+}
+async function analyzeBook(b, fromRead) {
+  busy('이야기를 읽고 있어요… (10~30초 걸려요)');
+  try {
+    let a;
+    if (aiReady()) a = (await api('analyze', { title: b.title === '제목 없음' ? '' : b.title, text: b.text, level: b.level }, 120000)).data;
+    else { await new Promise(r => setTimeout(r, 600)); a = demoAnalysis(b); }
+    Object.assign(b, { analysis: a, images: {}, quiz: null, continuation: [], lead: null, choices: null, question: null });
+    if ((!b.title || b.title === '제목 없음') && a.title) b.title = a.title;
+    await DB.put(b); state.book = b;
+    record(fromRead ? 'read' : 'reread', b, { summary: a.summary, chars: b.text.length });
+    if (fromRead) { stack.pop(); stack.push('book'); history.replaceState({ i: stack.length - 1 }, ''); showView('book'); } else renderBook();
+  } catch (e) { toast(e.message, 5500); if (fromRead) goHome(); }
+  finally { unbusy(); }
+}
+/* ============================== 책 상세 ============================== */
+function renderBook() {
+  const b = state.book, a = b.analysis, el = $('#v-book');
+  if (!a) { el.innerHTML = `<div class="card"><h2>${esc(b.title)}</h2><p>아직 이야기를 만들지 않았어요.</p><button class="btn block" data-act="analyzeNow">✨ 이야기 만들기</button></div>`; return; }
+  el.innerHTML = `
+    ${a.demo ? '<div class="note warn">샘플 체험 결과예요. 설정에서 AI를 연결하면 읽은 내용으로 만들어져요.</div>' : ''}
+    <div class="card hero"><div class="emoji">${esc(coverEmoji(b))}</div><h2>${esc(a.title || b.title)}</h2>
+      <p>${esc(a.summary)}</p>${a.theme ? `<p class="theme">💡 ${esc(a.theme)}</p>` : ''}</div>
+    <div class="chips">${(a.characters || []).map(c => `<span class="chip">${esc(c.name)}</span>`).join('')}</div>
+    <div class="stack">
+      <button class="btn block big" data-act="slides">🖼️ 그림 슬라이드 보기</button>
+      <button class="btn teal block big" data-act="quiz">❓ 퀴즈 풀기 ${b.quiz ? `<small>최근 ${b.quiz.score}/${b.quiz.total}</small>` : ''}</button>
+      <button class="btn violet block big" data-act="imagine">✨ 이야기 이어가기 ${b.continuation?.length ? `<small>${b.continuation.length}장면</small>` : ''}</button>
+    </div>
+    <details class="card"><summary>📝 읽은 내용 보기·고치기</summary>
+      <textarea id="editText" rows="8" style="margin-top:10px">${esc(b.text)}</textarea>
+      <p class="muted" style="font-size:.9rem">고친 뒤 다시 만들면 그림·퀴즈·이어 쓴 이야기가 새로 만들어져요.</p>
+      <div class="row"><button class="btn alt" data-act="reanalyze">고쳐서 다시 만들기</button><button class="btn alt" data-act="del">🗑️ 책 지우기</button></div>
+    </details>`;
+}
+
+/* ============================== 슬라이드 ============================== */
+function renderSlides() {
+  const b = state.book, a = b.analysis; if (!a) return go('book');
+  const list = ['cover', ...a.scenes.map((_, i) => i), 'end'];
+  const n = state.slide = Math.max(0, Math.min(state.slide || 0, list.length - 1)), it = list[n];
+  const missing = a.scenes.filter((_, i) => !b.images[i]).length;
+  let pic, cap, say;
+  const picOf = i => {
+    const sc = a.scenes[i], img = b.images[i];
+    return `<div class="pic">${img ? `<img src="${img}" alt="${esc(sc.caption)}">` : esc(sc.emoji)}${state.drawing && state.drawIdx === i ? '<span class="draw">🎨 그리는 중…</span>' : ''}</div>`;
+  };
+  if (it === 'cover') { pic = `<div class="pic">${b.images[0] ? `<img src="${b.images[0]}" alt="">` : esc(coverEmoji(b))}${state.drawing ? `<span class="draw">🎨 그림 그리는 중… (${Object.keys(b.images).length}/${a.scenes.length})</span>` : ''}</div>`; cap = `${esc(a.title || b.title)}<br><span class="sub">${esc(a.theme || '')}</span>`; say = (a.title || b.title) + '. ' + (a.theme || ''); }
+  else if (it === 'end') { pic = `<div class="pic">🌈</div>`; cap = `끝! 다음 이야기는 어떻게 될까요?`; say = '끝! 다음 이야기는 어떻게 될까요?'; }
+  else { pic = picOf(it); cap = esc(a.scenes[it].caption); say = a.scenes[it].caption; }
+  $('#v-slides').innerHTML = `
+    <div class="slide" id="slideBox">${pic}<div class="cap">${cap}</div></div>
+    <div class="dots" aria-label="${n + 1} / ${list.length}">${list.map((_, i) => `<i class="${i === n ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="nav"><button class="btn alt big" data-act="prev" ${n === 0 ? 'disabled' : ''}>← 이전</button>
+      <button class="btn big" data-act="${it === 'end' ? 'imagine' : 'next'}">${it === 'end' ? '✨ 이어가기' : '다음 →'}</button></div>
+    <div class="row" style="margin-top:14px;justify-content:center">
+      <button class="btn alt" data-act="say" data-say="${esc(say)}">🔊 듣기</button>
+      ${missing && !state.drawing ? `<button class="btn teal" data-act="draw">🎨 그림 그리기 (${missing}장)</button>` : ''}
+      ${typeof it === 'number' && !state.drawing && b.images[it] ? `<button class="btn alt" data-act="redraw" data-i="${it}">↻ 다시 그리기</button>` : ''}
+    </div>
+    ${!aiReady() && missing ? '<p class="note">그림을 그리려면 설정에서 AI를 연결해 주세요. 지금은 이모지 그림이에요.</p>' : ''}`;
+  const box = $('#slideBox'); let x0 = null;
+  box.addEventListener('touchstart', e => x0 = e.touches[0].clientX, { passive: true });
+  box.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) slideTo(state.slide + (dx < 0 ? 1 : -1), list.length); }, { passive: true });
+  if (state.slideSpeak) { state.slideSpeak = false; autoSay(say); }
+}
+function slideTo(n, len) { if (n < 0 || n >= len) return; state.slide = n; state.slideSpeak = true; renderSlides(); }
+async function drawScenes(only) {
+  const b = state.book, a = b.analysis;
+  if (!aiReady()) { toast('설정에서 AI를 먼저 연결해 주세요.'); return; }
+  if (state.drawing) return; state.drawing = true;
+  const targets = only != null ? [only] : a.scenes.map((_, i) => i).filter(i => !b.images[i]);
+  const refresh = () => { if (state.view === 'slides' && state.book === b) renderSlides(); };
+  try {
+    for (const i of targets) {
+      state.drawIdx = i; refresh();
+      const r = await api('image', { scene: a.scenes[i].image_prompt || a.scenes[i].caption, style: a.style, characters: charStr(a) }, 120000);
+      b.images[i] = await shrink(r.mime, r.data); await DB.put(b); refresh();
+    }
+  } catch (e) { toast(e.message, 5500); }
+  finally { state.drawing = false; state.drawIdx = -1; refresh(); }
+}
+
+/* ============================== 퀴즈 ============================== */
+function startQuiz() {
+  const qs = state.book.analysis.quiz.map(q => {
+    const idx = q.options.map((_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    return { ...q, order: idx, correctPos: idx.indexOf(q.answer) };
+  });
+  state.quiz = { qs, i: 0, first: 0, wrong: new Set(), done: false, missed: [] };
+}
+function renderQuiz() {
+  const b = state.book, Q = state.quiz, el = $('#v-quiz'); if (!Q) return go('book');
+  if (Q.i >= Q.qs.length) {
+    const total = Q.qs.length, pct = Q.first / total, stars = pct >= .8 ? 3 : pct >= .5 ? 2 : 1;
+    el.innerHTML = `<div class="card hero pop"><div class="stars">${'⭐'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+      <h2>${Q.first} / ${total} 맞혔어요!</h2><p>${pct >= .8 ? '우와, 이야기를 정말 잘 기억하고 있어요! 🎉' : pct >= .5 ? '잘했어요! 한 번 더 하면 더 잘할 수 있어요. 😊' : '괜찮아요! 이야기를 다시 보고 도전해 봐요. 💪'}</p></div>
+      <div class="stack"><button class="btn violet block big" data-act="imagine">✨ 이야기 이어가기</button>
+      <button class="btn teal block" data-act="retryQuiz">↻ 다시 풀기</button>
+      <button class="btn alt block" data-act="slides">🖼️ 슬라이드 다시 보기</button></div>`;
+    autoSay(`${total}문제 중에 ${Q.first}개를 맞혔어요!`); return;
+  }
+  const q = Q.qs[Q.i], hasWrong = Q.wrong.size > 0;
+  el.innerHTML = `
+    <div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="${Q.qs.length}" aria-valuenow="${Q.i}"><i style="width:${Q.i / Q.qs.length * 100}%"></i></div>
+    <p class="muted" style="margin-bottom:0">${Q.i + 1} / ${Q.qs.length}번 문제</p>
+    <div class="qtxt">${esc(q.q)}</div>
+    <button class="btn alt" data-act="sayQ">🔊 문제 듣기</button>
+    <div class="opts">${q.order.map((oi, pos) => {
+      const cls = Q.wrong.has(pos) ? 'wrong' : (Q.done && pos === q.correctPos ? 'right' : '');
+      return `<button class="opt ${cls}" data-act="opt" data-pos="${pos}" ${Q.wrong.has(pos) || Q.done ? 'disabled' : ''}>${['①', '②', '③', '④'][pos]} ${esc(q.options[oi])}</button>`;
+    }).join('')}</div>
+    ${Q.done ? `<div class="fb ok pop">🎉 정답이에요! ${esc(q.explain)}</div><button class="btn block big" style="margin-top:14px" data-act="nextQ">${Q.i + 1 >= Q.qs.length ? '결과 보기 →' : '다음 문제 →'}</button>`
+      : hasWrong ? `<div class="fb hint">💡 다시 생각해 봐요! ${esc(q.hint || '이야기를 떠올려 보세요.')}</div>` : ''}`;
+}
+const sayQuestion = () => { const q = state.quiz.qs[state.quiz.i]; tts.speak(q.q + ' ' + q.order.map((oi, p) => `${p + 1}번, ${q.options[oi]}`).join('. ')); };
+function pickOpt(pos) {
+  const Q = state.quiz, q = Q.qs[Q.i]; if (Q.done) return;
+  if (pos === q.correctPos) { Q.done = true; if (!Q.wrong.size) Q.first++; tts.speak('정답이에요!'); }
+  else { if (!Q.wrong.size) Q.missed.push(q.q); Q.wrong.add(pos); tts.speak('다시 생각해 볼까요?'); }
+  renderQuiz();
+}
+async function nextQuestion() {
+  const Q = state.quiz; Q.i++; Q.done = false; Q.wrong = new Set();
+  if (Q.i >= Q.qs.length) {
+    const b = state.book; b.quiz = { score: Q.first, total: Q.qs.length, at: Date.now() };
+    b.quizCount = (b.quizCount || 0) + 1; b.quizBest = Math.max(b.quizBest || 0, Q.first);
+    await DB.put(b); record('quiz', b, { score: Q.first, total: Q.qs.length, missed: Q.missed });
+  }
+  renderQuiz(); if (Q.i < Q.qs.length && cfg.autoSpeak) sayQuestion();
+}
+
+/* ============================== 이야기 이어가기 ============================== */
+function enterImagine() {
+  const b = state.book; if (!b || !b.analysis) return go('book');
+  const ck = $('#chkDraw'); ck.disabled = !aiReady(); ck.checked = aiReady() && !!cfg.draw;   // AI 연결 전에는 끄고, 사용자의 저장된 선택은 건드리지 않음
+  $('#qChips').innerHTML = (b.analysis.imagine || []).map(q => `<button data-act="ask" data-q="${esc(q)}">💭 ${esc(q)}</button>`).join('');
+  paintSegs(); paintChoices();
+  if (!b.choices && !b.continuation.length) loadChoices();
+}
+function paintSegs() {
+  const b = state.book, el = $('#segs'); if (!el) return;
+  el.innerHTML = (b.continuation || []).map((s, i) => `
+    <div class="seg-item">${s.idea ? `<div class="idea">🗣️ ${esc(s.idea)}</div>` : ''}
+      <div class="pic">${s.image ? `<img src="${s.image}" alt="">` : esc(s.emoji || '✨')}${s.drawing ? '<span class="draw">🎨 그리는 중…</span>' : ''}</div>
+      <div class="txt">${esc(s.story)} <button class="btn alt" style="min-height:40px;padding:0 12px" data-act="say" data-say="${esc(s.story)}" aria-label="소리로 듣기">🔊</button></div></div>`).join('');
+}
+function paintChoices() {
+  const b = state.book, el = $('#choicePanel'); if (!el) return;
+  if (state.imagineBusy) { el.innerHTML = `<div class="card" style="text-align:center"><div class="spin" style="margin:0 auto;border-color:#DCD2FF;border-top-color:var(--violet)"></div><p>이야기를 상상하는 중…</p></div>`; return; }
+  const head = b.continuation.length ? (b.question ? '💭 ' + b.question : '그다음엔 어떻게 될까요?') : (b.lead ? '📖 ' + b.lead : '이야기가 끝났어요. 그다음엔?');
+  el.innerHTML = b.choices?.length ? `<div class="card"><div style="font-weight:800">${esc(head)}</div>
+    <div class="choices">${b.choices.map((c, i) => `<button class="choice" data-act="pickChoice" data-i="${i}"><b>${esc(c.emoji)}</b><span>${esc(c.text)}</span></button>`).join('')}</div></div>` : '';
+}
+async function loadChoices() {
+  const b = state.book; state.imagineBusy = true; paintChoices();
+  try {
+    if (aiReady()) { const r = await api('continue', continuePayload(b, '')); b.lead = r.lead; b.choices = r.choices; }
+    else { b.lead = '토끼와 거북이의 시합이 끝났어요. 그다음엔 무슨 일이 생길까요?'; b.choices = [{ emoji: '🏁', text: '둘이 다시 시합을 해요' }, { emoji: '🤝', text: '토끼와 거북이가 친구가 돼요' }, { emoji: '🚀', text: '하늘 나라로 달리기 여행을 떠나요' }]; }
+    await DB.put(b);
+  } catch (e) { toast(e.message, 5000); }
+  state.imagineBusy = false; paintChoices();
+}
+const continuePayload = (b, idea) => ({ title: b.analysis.title || b.title, summary: b.analysis.summary, characters: charStr(b.analysis), storyTail: b.text.slice(-2000), history: b.continuation.map(s => s.story), idea, level: b.level });
+async function continueStory(idea, via = 'typed') {
+  idea = idea.trim(); if (!idea) { toast('어떤 일이 생길지 골라 보거나 적어 주세요.'); return; }
+  if (state.imagineBusy) return; const b = state.book; state.imagineBusy = true; paintChoices();
+  try {
+    let r;
+    if (aiReady()) r = await api('continue', continuePayload(b, idea));
+    else r = { story: `"${idea}" 라는 멋진 생각에 모두 손뼉을 쳤어요. 거북이는 씩씩하게 한 걸음, 또 한 걸음 나아갔어요. 그리고 숲속에는 새로운 이야기가 시작되었지요.`, image_prompt: '', emoji: '🌳', question: '이 다음엔 누가 나타날까요?', choices: [{ emoji: '🦊', text: '꾀 많은 여우가 나타나요' }, { emoji: '🌈', text: '무지개 다리가 생겨요' }, { emoji: '🏡', text: '모두 함께 집으로 돌아가요' }] };
+    const seg = { idea, story: r.story, emoji: r.emoji, image_prompt: r.image_prompt, image: null, drawing: false };
+    b.continuation.push(seg); b.choices = r.choices; b.question = r.question; await DB.put(b);
+    record('story', b, { idea, story: r.story, via });
+    $('#ideaText').value = '';
+    const wantDraw = $('#chkDraw').checked && aiReady();
+    if (aiReady()) { cfg.draw = wantDraw; saveCfg(); }
+    state.imagineBusy = false; paintSegs(); paintChoices(); autoSay(seg.story);
+    if (wantDraw && seg.image_prompt) drawSeg(b, seg);
+    $('#choicePanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } catch (e) { state.imagineBusy = false; paintChoices(); toast(e.message, 5500); }
+}
+async function drawSeg(b, seg) {
+  seg.drawing = true; if (state.book === b) paintSegs();
+  try {
+    const r = await api('image', { scene: seg.image_prompt, style: b.analysis.style, characters: charStr(b.analysis) }, 120000);
+    seg.image = await shrink(r.mime, r.data);
+  } catch (e) { toast(e.message, 4500); }
+  seg.drawing = false; await DB.put(b); if (state.book === b && state.view === 'imagine') paintSegs();
+}
+
+/* ============================== 설정 ============================== */
+function renderSettings() {
+  $('#setUrl').value = cfg.url; $('#setCode').value = cfg.code; $('#setNick').value = cfg.nick;
+  $('#setSpeak').checked = cfg.autoSpeak; $('#setBackup').checked = cfg.backup; $('#setConsent').checked = cfg.consent;
+  $('#urlWarn').hidden = !cfg.url || okUrl(cfg.url);
+  paintSync();
+}
+function onSettingsInput() {
+  const u = $('#setUrl').value.trim(); $('#urlWarn').hidden = !u || okUrl(u);
+  cfg.url = u; cfg.code = $('#setCode').value; cfg.nick = $('#setNick').value.trim();
+  cfg.autoSpeak = $('#setSpeak').checked; cfg.backup = $('#setBackup').checked; cfg.consent = $('#setConsent').checked;
+  saveCfg(); paintSync(); sync.flush();
+}
+async function testConn() {
+  onSettingsInput(); const st = $('#connState');
+  if (!okUrl(cfg.url)) { st.textContent = '주소 형식을 확인해 주세요.'; return; }
+  if (!cfg.code) { st.textContent = '접속 코드를 입력해 주세요.'; return; }
+  st.textContent = '연결하는 중…';
+  try { const r = await api('ping', { deep: true }, 60000); st.textContent = `✅ 연결 성공! AI 모델: ${r.textModel} / 그림 모델: ${r.imageModel}` + (r.sheet ? ` / 기록 시트: ${r.sheet}` : ' / ⚠️ 기록할 시트가 없어요(Code.gs를 시트에서 열었는지 확인)'); paintSync(); sync.flush(); }
+  catch (e) { st.textContent = '❌ ' + e.message; }
+}
+
+/* ============================== 샘플(연결 없이 체험) ============================== */
+function demoAnalysis(b) {
+  const st = "soft watercolor children's picture book illustration, warm pastel colors";
+  return {
+    demo: true, title: b.title !== '제목 없음' ? b.title : '토끼와 거북이',
+    summary: '빠르다고 자랑하던 토끼가 거북이와 달리기 시합을 했어요. 토끼는 낮잠을 자다가 졌고, 쉬지 않고 걸은 거북이가 이겼어요.',
+    theme: '꾸준히 노력하면 좋은 결과가 와요.',
+    characters: [{ name: '토끼', look: 'a white rabbit with long ears and a red scarf' }, { name: '거북이', look: 'a friendly green tortoise with a round brown shell' }],
+    style: st,
+    scenes: [
+      { caption: '토끼가 거북이에게 "우리 달리기 시합 할래?" 하고 말했어요.', image_prompt: 'A proud white rabbit challenges a calm green tortoise to a race on a sunny forest path', emoji: '🐰' },
+      { caption: '토끼는 쌩쌩 달리고, 거북이는 엉금엉금 걸었어요.', image_prompt: 'The rabbit runs far ahead while the tortoise slowly walks', emoji: '🏃' },
+      { caption: '토끼는 나무 그늘에서 쿨쿨 낮잠을 잤어요.', image_prompt: 'The rabbit sleeps under a big tree while the tortoise walks past', emoji: '😴' },
+      { caption: '거북이가 먼저 결승선에 도착했어요!', image_prompt: 'The tortoise crosses the finish line while animals cheer', emoji: '🏆' }
+    ],
+    quiz: [
+      { q: '달리기 시합을 한 동물은 누구와 누구였나요?', options: ['토끼와 거북이', '토끼와 여우', '거북이와 곰'], answer: 0, hint: '이야기 맨 처음을 떠올려 봐요.', explain: '토끼와 거북이가 시합을 했어요.' },
+      { q: '토끼는 시합 도중에 무엇을 했나요?', options: ['낮잠을 잤어요', '노래를 불렀어요'], answer: 0, hint: '나무 그늘에서 눈을 감았어요.', explain: '토끼는 나무 그늘에서 쿨쿨 잤어요.' },
+      { q: '시합에서 이긴 동물은 누구인가요?', options: ['토끼', '거북이', '둘 다 못 이겼어요'], answer: 1, hint: '쉬지 않고 계속 걸었던 친구예요.', explain: '쉬지 않고 걸은 거북이가 이겼어요.' }
+    ],
+    imagine: ['만약에 토끼가 낮잠을 자지 않았다면 어떻게 되었을까?', '만약에 거북이가 로켓 신발을 신었다면?', '토끼와 거북이가 다시 시합한다면 어떤 규칙을 만들고 싶어?']
+  };
+}
+
+/* ============================== 클릭 처리 ============================== */
+const ACT = {
+  back: () => history.back(),
+  settings: (_, e) => { e.preventDefault(); if (state.view !== 'settings') go('settings'); },
+  newBook: () => go('read'),
+  openBook: async el => { const b = (await DB.all()).find(x => x.id === el.dataset.id); if (!b) return; state.book = b; state.slide = 0; go('book'); },
+  level: el => { cfg.level = el.dataset.level; saveCfg(); $$('#lvSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === el))); },
+  mic: el => mic.toggle($('#rdText'), el, $('#rdInterim')),
+  micIdea: el => mic.toggle($('#ideaText'), el, $('#ideaInterim')),
+  sample: () => { $('#rdText').value = SAMPLE_TEXT; if (!$('#rdTitle').value) $('#rdTitle').value = '토끼와 거북이'; saveDraft(); },
+  clearRead: () => { mic.stop(); $('#rdText').value = ''; $('#rdTitle').value = ''; saveDraft(); },
+  makeStory,
+  analyzeNow: () => analyzeBook(state.book, false),
+  reanalyze: () => { const t = $('#editText').value.trim(); if (t.length < 20) return toast('내용이 너무 짧아요.'); if (!confirm('그림·퀴즈·이어 쓴 이야기가 새로 만들어져요. 계속할까요?')) return; state.book.text = t; analyzeBook(state.book, false); },
+  del: async () => { if (!confirm('이 책을 지울까요? 되돌릴 수 없어요.')) return; await DB.del(state.book.id); state.book = null; goHome(); },
+  slides: () => { state.slide = 0; state.slideSpeak = cfg.autoSpeak; state.view === 'slides' ? renderSlides() : go('slides'); },
+  prev: () => slideTo(state.slide - 1, state.book.analysis.scenes.length + 2),
+  next: () => slideTo(state.slide + 1, state.book.analysis.scenes.length + 2),
+  say: el => tts.speak(el.dataset.say),
+  draw: () => drawScenes(null),
+  redraw: el => drawScenes(+el.dataset.i),
+  quiz: () => { startQuiz(); go('quiz'); if (cfg.autoSpeak) sayQuestion(); },
+  retryQuiz: () => { startQuiz(); renderQuiz(); if (cfg.autoSpeak) sayQuestion(); },
+  sayQ: sayQuestion,
+  opt: el => pickOpt(+el.dataset.pos),
+  nextQ: nextQuestion,
+  imagine: () => state.view === 'imagine' ? null : go('imagine'),
+  pickChoice: el => continueStory(state.book.choices[+el.dataset.i].text, 'choice'),
+  ask: el => { $('#ideaText').value = el.dataset.q; $('#ideaText').focus(); },
+  sendIdea: () => { mic.stop(); continueStory($('#ideaText').value); },
+  resetStory: async () => { if (!confirm('이어 쓴 이야기를 지우고 처음부터 상상할까요?')) return; const b = state.book; Object.assign(b, { continuation: [], choices: null, lead: null, question: null }); await DB.put(b); record('book', b); paintSegs(); paintChoices(); loadChoices(); },
+  testConn,
+  syncNow: () => { if (!sync.on()) return toast('시트 기록을 켜고, 보호자 동의와 AI 연결을 먼저 해 주세요.'); sync.err = ''; sync.flush(); },
+  uploadAll: async () => {
+    if (!sync.on()) return toast('시트 기록을 켜고, 보호자 동의와 AI 연결을 먼저 해 주세요.');
+    const books = (await DB.all()).filter(b => b.analysis && !b.analysis.demo);
+    if (!books.length) return toast('올릴 책이 없어요.');
+    books.forEach(b => sync.push(bookSnap(b))); toast(`${books.length}권을 시트로 보내고 있어요.`);
+  },
+  shareLink: async () => {
+    if (!aiReady()) return toast('주소와 접속 코드를 먼저 넣어 주세요.');
+    const link = location.origin + location.pathname + '#api=' + encodeURIComponent(cfg.url.trim()) + '&code=' + encodeURIComponent(cfg.code);
+    try { await navigator.clipboard.writeText(link); toast('링크를 복사했어요. 보호자에게 보내 주세요.'); }
+    catch (_) { prompt('아래 링크를 복사해 보호자에게 보내 주세요.', link); }
+  },
+  wipe: async () => { if (!confirm('이 기기에 저장된 모든 책을 지울까요? 되돌릴 수 없어요.')) return; await DB.clear(); state.book = null; toast('모두 지웠어요.'); }
+};
+document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el && ACT[el.dataset.act]) ACT[el.dataset.act](el, e); });
+['#rdTitle', '#rdText'].forEach(s => $(s).addEventListener('input', saveDraft));
+['#setUrl', '#setCode', '#setNick', '#setSpeak', '#setBackup', '#setConsent'].forEach(s => $(s).addEventListener('input', onSettingsInput));
+addEventListener('pagehide', () => { mic.stop(); tts.stop(); });
+if (tts.ok) speechSynthesis.getVoices();   // 일부 브라우저에서 목소리 목록을 미리 불러오기
+
+addEventListener('online', () => sync.flush());
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync.flush(); });
+showView('home');
+sync.flush();
+</script>
+</body>
+</html>
