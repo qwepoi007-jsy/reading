@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" chttps://script.google.com/macros/s/AKfycbzJ5ggpfDyNXnhqS1gi79IKBDgjDFDl367AvWDq4ERzb4b6dTfiRIWYhVlW-LejqE4/execontent="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#FF7A59">
 <meta name="robots" content="noindex">
 <title>이야기친구</title>
@@ -40,6 +40,8 @@ small,.muted{color:var(--muted)}
 .btn:disabled{opacity:.45;pointer-events:none}
 .btn.alt{background:#fff;color:var(--ink);border:2px solid var(--line);box-shadow:none;min-height:48px}
 .btn.teal{background:var(--teal)} .btn.violet{background:var(--violet)}
+.btn.sm{min-height:40px;padding:0 12px;font-size:.92rem}
+a.btn{text-decoration:none}
 .btn.block{display:flex;width:100%} .btn.big{min-height:66px;font-size:1.15rem}
 .btn small{color:rgba(255,255,255,.85);font-weight:600}
 .stack>*+*{margin-top:12px}
@@ -72,6 +74,13 @@ textarea{resize:vertical;min-height:120px}
 .miclabel{margin-top:14px;font-weight:700}
 .interim{min-height:1.6em;color:var(--muted);font-style:italic}
 
+/* 녹음 */
+.recstate{min-height:1.4em;color:var(--bad);font-weight:800}
+.clip{border:2px solid var(--line);border-radius:16px;padding:10px 12px}
+.clip audio{width:100%;margin-top:6px;display:block}
+.chk{display:flex;gap:8px;align-items:center;justify-content:center;font-weight:700;margin:6px 0}
+.chk input{width:22px;height:22px}
+
 /* 책 */
 .hero{text-align:center}.hero .emoji{font-size:3.4rem;line-height:1.2}
 .theme{background:#EAF8F5;border-radius:14px;padding:8px 12px;font-weight:700;color:#0F6E65}
@@ -83,6 +92,8 @@ details.card summary{font-weight:800;cursor:pointer}
 .slide{background:#fff;border-radius:28px;box-shadow:var(--shadow);overflow:hidden;touch-action:pan-y}
 .pic{position:relative;aspect-ratio:4/3;background:linear-gradient(135deg,#FFE3B8,#FFD0E0);display:grid;place-items:center;font-size:96px}
 .pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.pic.art{border-radius:18px;overflow:hidden}
+.pic .emo{position:absolute;left:10px;top:10px;font-size:2rem;line-height:1.3;background:rgba(255,255,255,.88);border-radius:14px;padding:0 8px}
 .pic .draw{position:absolute;right:10px;bottom:10px;font-size:.85rem;background:rgba(255,255,255,.92);border-radius:99px;padding:3px 12px;font-weight:700}
 .cap{padding:18px 20px 24px;font-size:1.3rem;font-weight:700;line-height:1.65}
 .cap .sub{font-size:1rem;font-weight:600;color:var(--muted)}
@@ -104,14 +115,15 @@ details.card summary{font-weight:800;cursor:pointer}
 
 /* 이어가기 */
 .seg-item{background:#fff;border-radius:22px;box-shadow:var(--shadow);overflow:hidden;margin:14px 0}
-.seg-item .pic{font-size:70px}
 .seg-item .idea{background:#F3ECFF;color:#4B36B3;font-weight:700;padding:8px 16px;font-size:.95rem}
 .seg-item .txt{padding:14px 18px 16px;font-weight:600}
+.seg-item .txt b{font-size:1.6rem;margin-right:6px}
 .choices{display:grid;gap:10px;margin:10px 0}
 .choice{display:flex;gap:12px;align-items:center;text-align:left;width:100%;border:3px solid #DCD2FF;background:#fff;border-radius:18px;padding:12px 14px;font:inherit;font-weight:700;cursor:pointer;color:inherit;min-height:60px}
 .choice b{font-size:1.7rem}
 .q-chips{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}
 .q-chips button{border:2px solid #DCD2FF;background:#fff;border-radius:99px;padding:6px 14px;font:inherit;font-size:.9rem;font-weight:600;cursor:pointer;color:inherit;text-align:left}
+.row>textarea{flex:1;width:auto;min-width:0}
 .mini-mic{width:56px;min-height:56px;padding:0;font-size:1.5rem;flex:none}
 .mini-mic.on{background:var(--bad);animation:pulse 1.4s infinite;color:#fff}
 .spin{width:44px;height:44px;border-radius:50%;border:5px solid #fff;border-top-color:var(--brand);animation:sp 1s linear infinite}@keyframes sp{to{transform:rotate(360deg)}}
@@ -146,7 +158,10 @@ details.card summary{font-weight:800;cursor:pointer}
         <button class="mic" id="micRead" data-act="mic" aria-pressed="false" aria-label="음성 인식 시작 또는 멈춤">🎙️</button>
         <div class="miclabel" data-off="눌러서 책을 읽어 주세요" data-on="듣고 있어요… 다 읽으면 한 번 더 눌러요">눌러서 책을 읽어 주세요</div>
         <div class="interim" id="rdInterim" aria-live="polite"></div>
+        <div class="recstate" id="recState" aria-live="polite"></div>
+        <label class="chk" id="recWrap"><input type="checkbox" id="chkRec"> <span>🎧 목소리도 녹음해서 저장하기</span></label>
       </div>
+      <div id="draftClips"></div>
       <label class="fld">읽은 내용 <small>(잘못 들린 글자는 고칠 수 있어요)</small>
         <textarea id="rdText" rows="9" placeholder="여기에 읽은 내용이 글자로 나타나요. 직접 쓰거나 붙여 넣어도 돼요."></textarea>
       </label>
@@ -175,9 +190,9 @@ details.card summary{font-weight:800;cursor:pointer}
           <button class="btn alt mini-mic" id="micIdea" data-act="micIdea" aria-pressed="false" aria-label="말로 입력">🎙️</button>
         </div>
         <div class="interim" id="ideaInterim" aria-live="polite"></div>
-        <label class="row" style="margin:6px 0"><input type="checkbox" id="chkDraw" style="width:22px;height:22px"> <span>🎨 그림도 그리기</span></label>
         <button class="btn violet block" data-act="sendIdea">이 생각으로 이어가기</button>
       </div>
+      <div id="contArt"></div>
       <button class="btn alt block" data-act="resetStory">처음부터 다시 상상하기</button>
     </section>
 
@@ -205,9 +220,10 @@ details.card summary{font-weight:800;cursor:pointer}
       </div>
       <div class="card stack">
         <h2 style="margin:0">📊 구글 시트에 기록</h2>
-        <p class="muted" style="margin:0">켜 두면 읽은 내용(글자), 퀴즈 결과, 아이가 이어 쓴 이야기가 선생님·보호자의 Google 시트에 계속 쌓여요. 인터넷이 끊겨도 모아 두었다가 나중에 보내요. 음성 녹음과 그림은 보내지 않아요.</p>
+        <p class="muted" style="margin:0">켜 두면 읽은 내용(글자), 퀴즈 결과, 아이가 이어 쓴 이야기가 선생님·보호자의 Google 시트에 계속 쌓여요. 인터넷이 끊겨도 모아 두었다가 나중에 보내요. 그림은 보내지 않아요.</p>
         <label class="row"><input type="checkbox" id="setBackup" style="width:22px;height:22px"> <span>시트에 기록하기</span></label>
-        <label class="row" style="align-items:flex-start"><input type="checkbox" id="setConsent" style="width:22px;height:22px;margin-top:4px"> <span>보호자가 위 내용을 이해하고 동의했어요.</span></label>
+        <label class="row" style="align-items:flex-start"><input type="checkbox" id="setDrive" style="width:22px;height:22px;margin-top:4px"> <span>🎧 녹음 파일도 구글 드라이브(“이야기친구 녹음” 폴더)에 저장하기</span></label>
+        <label class="row" style="align-items:flex-start"><input type="checkbox" id="setConsent" style="width:22px;height:22px;margin-top:4px"> <span>보호자가 위 내용(녹음 저장 포함)을 이해하고 동의했어요.</span></label>
         <div id="syncState" class="note" aria-live="polite"></div>
         <div class="row"><button class="btn alt" data-act="syncNow">지금 보내기</button><button class="btn alt" data-act="uploadAll">서재 전체 올리기</button></div>
       </div>
@@ -218,9 +234,10 @@ details.card summary{font-weight:800;cursor:pointer}
       </div>
       <div class="note">
         <b>개인정보 안내</b><br>
-        · 음성은 브라우저의 음성 인식(Chrome은 Google 서버)이 글자로 바꿔 주며, 앱은 녹음 파일을 저장하지 않아요.<br>
+        · 음성은 브라우저의 음성 인식(Chrome은 Google 서버)이 글자로 바꿔 줘요.<br>
+        · [목소리도 녹음]을 켜면 녹음 파일이 이 기기에 저장되고, 위에서 드라이브 저장을 켠 경우에만 선생님·보호자의 구글 드라이브로 보내져요.<br>
         · 이야기 만들기·그림·퀴즈를 쓰면 읽은 글이 AI(Google Gemini)로 전송돼요. 이름·전화번호 같은 개인정보는 읽지 마세요.<br>
-        · 서재는 이 기기의 브라우저에만 저장돼요. 기기를 바꾸면 보이지 않아요.
+        · 서재(책·그림·녹음)는 이 기기의 브라우저에만 저장돼요. 기기를 바꾸면 보이지 않아요. 중요한 녹음은 [💾 저장]으로 내려받아 두세요.
       </div>
       <button class="btn alt block" data-act="wipe">🗑️ 이 기기의 서재 모두 지우기</button>
     </section>
@@ -236,7 +253,7 @@ details.card summary{font-weight:800;cursor:pointer}
 /* ============================== 기본 설정 ============================== */
 // (선택) 웹 앱 주소를 여기에 붙여 넣으면 설정 화면에 입력하지 않아도 됩니다. Code.gs와 연결하는 곳은 이곳(또는 ⚙️ 설정) 하나뿐이에요.
 // 접속 코드와 API 키는 절대 여기에 쓰지 마세요(GitHub에 공개됩니다).
-const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzJ5ggpfDyNXnhqS1gi79IKBDgjDFDl367AvWDq4ERzb4b6dTfiRIWYhVlW-LejqE4/exec';
+const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyhb77vOfyYne0ZPdh4s0WlRddGjkuENcK9qsOs2YdOYstJT0XyPGNUfEo20eOVSo4/exec';
 const LEVELS = {
   toddler: { icon: '🧸', label: '유아', hint: '4~7세' },
   low:     { icon: '🎒', label: '초등 저학년', hint: '1~3학년' },
@@ -255,7 +272,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {} },
   del(k) { try { localStorage.removeItem(k); } catch (_) {} }
 };
-const cfg = Object.assign({ url: DEFAULT_ENDPOINT, code: '', nick: '', level: 'toddler', autoSpeak: true, backup: false, consent: false, draw: true }, LS.get('sb_cfg', {}));
+const cfg = Object.assign({ url: DEFAULT_ENDPOINT, code: '', nick: '', level: 'toddler', autoSpeak: true, backup: false, consent: false, recAudio: true, driveAudio: false }, LS.get('sb_cfg', {}));
 const saveCfg = () => LS.set('sb_cfg', cfg);
 const okUrl = u => /^https:\/\/script\.google\.com\/(macros\/s\/[\w-]+\/exec|a\/macros\/[\w.-]+\/s\/[\w-]+\/exec)$/.test(String(u).trim());
 const aiReady = () => okUrl(cfg.url) && !!cfg.code;
@@ -264,30 +281,44 @@ let toastT;
 function toast(msg, ms = 3200) { const t = $('#toast'); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, ms); }
 function busy(msg) { $('#busyMsg').textContent = msg; $('#busy').hidden = false; }
 function unbusy() { $('#busy').hidden = true; }
+const fmtDur = s => { s = Math.max(0, Math.round(s || 0)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+const fileName = s => String(s || '이야기').replace(/[\\/:*?"<>|#%]/g, '').trim().slice(0, 40) || '이야기';
+const extOf = m => /mp4|m4a|aac/.test(m) ? 'm4a' : /ogg/.test(m) ? 'ogg' : /wav/.test(m) ? 'wav' : 'webm';
 
-/* ============================== 저장소(IndexedDB) ============================== */
+/* ============================== 저장소(IndexedDB) ==============================
+   books: 책(글·AI 결과·그림)   audio: 녹음 파일(책마다 여러 개, 아직 책이 없으면 bookId='draft') */
 const DB = (() => {
   let db = null, mem = null;
   const open = () => db ? Promise.resolve(db) : new Promise((res, rej) => {
     if (!window.indexedDB) return rej();
-    const r = indexedDB.open('storybuddy', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('books', { keyPath: 'id' });
+    const r = indexedDB.open('storybuddy', 2);
+    r.onupgradeneeded = () => {
+      const d = r.result;
+      if (!d.objectStoreNames.contains('books')) d.createObjectStore('books', { keyPath: 'id' });
+      if (!d.objectStoreNames.contains('audio')) d.createObjectStore('audio', { keyPath: 'id' }).createIndex('bookId', 'bookId');
+    };
     r.onsuccess = () => { db = r.result; res(db); };
     r.onerror = () => rej(r.error);
   });
-  async function tx(mode, fn) {
-    if (!mem) { try { await open(); } catch (_) { mem = new Map(); toast('이 브라우저에서는 저장이 제한돼요. 창을 닫으면 서재가 사라질 수 있어요.', 5000); } }
-    if (mem) return fn.mem(mem);
+  async function tx(store, mode, fn) {
+    if (!mem) { try { await open(); } catch (_) { mem = { books: new Map(), audio: new Map() }; toast('이 브라우저에서는 저장이 제한돼요. 창을 닫으면 서재가 사라질 수 있어요.', 5000); } }
+    if (mem) return fn.mem(mem[store]);
     return new Promise((res, rej) => {
-      const t = db.transaction('books', mode), req = fn.idb(t.objectStore('books'));
+      const t = db.transaction(store, mode), req = fn.idb(t.objectStore(store));
       t.oncomplete = () => res(req && req.result); t.onerror = t.onabort = () => rej(t.error);
     });
   }
+  const byAt = a => (a || []).sort((x, y) => x.at - y.at);
   return {
-    all: () => tx('readonly', { idb: s => s.getAll(), mem: m => [...m.values()] }),
-    put: b => tx('readwrite', { idb: s => s.put(b), mem: m => m.set(b.id, b) }),
-    del: id => tx('readwrite', { idb: s => s.delete(id), mem: m => m.delete(id) }),
-    clear: () => tx('readwrite', { idb: s => s.clear(), mem: m => m.clear() })
+    all: () => tx('books', 'readonly', { idb: s => s.getAll(), mem: m => [...m.values()] }),
+    put: b => tx('books', 'readwrite', { idb: s => s.put(b), mem: m => m.set(b.id, b) }),
+    del: id => tx('books', 'readwrite', { idb: s => s.delete(id), mem: m => m.delete(id) }),
+    clear: () => tx('books', 'readwrite', { idb: s => s.clear(), mem: m => m.clear() }),
+    clips: bookId => tx('audio', 'readonly', { idb: s => s.index('bookId').getAll(bookId), mem: m => [...m.values()].filter(c => c.bookId === bookId) }).then(byAt),
+    allClips: () => tx('audio', 'readonly', { idb: s => s.getAll(), mem: m => [...m.values()] }).then(byAt),
+    putClip: c => tx('audio', 'readwrite', { idb: s => s.put(c), mem: m => m.set(c.id, c) }),
+    delClip: id => tx('audio', 'readwrite', { idb: s => s.delete(id), mem: m => m.delete(id) }),
+    clearClips: () => tx('audio', 'readwrite', { idb: s => s.clear(), mem: m => m.clear() })
   };
 })();
 
@@ -313,10 +344,14 @@ async function api(action, payload = {}, timeout = 90000) {
 const SRC = window.SpeechRecognition || window.webkitSpeechRecognition;
 const mic = {
   rec: null, want: false, ta: null, btn: null, interimEl: null, wake: null,
-  toggle(ta, btn, interimEl) { const same = this.want && this.ta === ta; if (this.want) this.stop(); if (!same) this.start(ta, btn, interimEl); },
-  start(ta, btn, interimEl) {
-    if (!SRC) { toast('이 브라우저는 음성 인식을 지원하지 않아요. 안드로이드 Chrome을 쓰거나, 키보드의 🎤 받아쓰기를 이용해 주세요.', 6500); return; }
-    Object.assign(this, { ta, btn, interimEl, want: true }); this.ui(true); this.spawn(); this.lock();
+  noStt: false,
+  toggle(ta, btn, interimEl, withRec) { const same = this.want && this.ta === ta; if (this.want) this.stop(); if (!same) this.start(ta, btn, interimEl, withRec); },
+  start(ta, btn, interimEl, withRec) {
+    const rec = !!withRec && cfg.recAudio && recorder.ok;
+    if (!SRC && !rec) { toast('이 브라우저는 음성 인식을 지원하지 않아요. 안드로이드 Chrome을 쓰거나, 키보드의 🎤 받아쓰기를 이용해 주세요.', 6500); return; }
+    Object.assign(this, { ta, btn, interimEl, want: true, noStt: !SRC }); this.ui(true); this.lock();
+    if (rec) recorder.start().then(ok => { if (!ok && !SRC) this.stop(); });
+    if (SRC) this.spawn(); else toast('이 브라우저는 글자 받아쓰기가 안 돼요. 녹음만 할게요. 글은 직접 입력해 주세요.', 6000);
   },
   spawn() {
     const r = new SRC();
@@ -327,13 +362,15 @@ const mic = {
       if (this.interimEl) this.interimEl.textContent = interim;
     };
     r.onerror = e => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { this.want = false; toast('마이크를 허용해 주세요. (주소창 왼쪽 자물쇠 → 권한 → 마이크)', 6500); }
+      if (recorder.on && ['audio-capture', 'network', 'service-not-allowed'].includes(e.error)) { this.noStt = true; toast(e.error === 'network' ? '글자 받아쓰기 서버에 연결하지 못했어요. 녹음은 계속돼요.' : '이 기기에서는 녹음하는 동안 글자 받아쓰기가 안 돼요. 녹음은 계속돼요. 글은 나중에 직접 입력해 주세요.', 7000); }
+      else if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { this.want = false; toast('마이크를 허용해 주세요. (주소창 왼쪽 자물쇠 → 권한 → 마이크)', 6500); }
       else if (e.error === 'audio-capture') { this.want = false; toast('마이크를 찾지 못했어요.'); }
       else if (e.error === 'network') { this.want = false; toast('음성 인식 서버에 연결하지 못했어요. 인터넷을 확인해 주세요.', 5000); }
     };
     r.onend = () => {
       if (this.interimEl) this.interimEl.textContent = '';
-      if (this.want) setTimeout(() => { if (this.want) this.spawn(); }, 200); else { this.ui(false); this.unlock(); }
+      if (this.want) { if (!this.noStt) setTimeout(() => { if (this.want && !this.noStt) this.spawn(); }, 200); }
+      else { this.ui(false); this.unlock(); recorder.stop(); }
     };
     this.rec = r; try { r.start(); } catch (_) {}
   },
@@ -342,7 +379,7 @@ const mic = {
     const ta = this.ta; ta.value = (ta.value ? ta.value.replace(/\s+$/, '') + ' ' : '') + t;
     ta.dispatchEvent(new Event('input', { bubbles: true })); ta.scrollTop = ta.scrollHeight;
   },
-  stop() { this.want = false; try { this.rec && this.rec.stop(); } catch (_) {} this.ui(false); this.unlock(); if (this.interimEl) this.interimEl.textContent = ''; },
+  stop() { this.want = false; this.noStt = false; try { this.rec && this.rec.stop(); } catch (_) {} this.ui(false); this.unlock(); if (this.interimEl) this.interimEl.textContent = ''; return recorder.stop(); },
   ui(on) {
     const b = this.btn; if (!b) return;
     b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
@@ -351,6 +388,82 @@ const mic = {
   async lock() { try { this.wake = await navigator.wakeLock.request('screen'); } catch (_) {} },   // 읽는 동안 화면이 꺼지지 않게
   unlock() { try { this.wake && this.wake.release(); } catch (_) {} this.wake = null; }
 };
+/* 녹음(MediaRecorder): 책 읽기 마이크와 함께 켜지고 꺼져요. 한 번 켰다 끈 것이 녹음 1개. */
+const recorder = {
+  ok: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder),
+  on: false, sess: null, timer: null,
+  pickMime() { return ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'].find(m => { try { return MediaRecorder.isTypeSupported(m); } catch (_) { return false; } }) || ''; },
+  async start() {
+    if (!this.ok || this.on) return false;
+    this.on = true;
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+    catch (_) { this.on = false; toast('녹음을 시작하지 못했어요. 마이크 권한을 확인해 주세요.', 5000); return false; }
+    if (!this.on) { stream.getTracks().forEach(t => t.stop()); return false; }   // 켜지는 사이에 이미 멈춤
+    const mime = this.pickMime();
+    let mr;
+    try { mr = new MediaRecorder(stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : { audioBitsPerSecond: 48000 }); }
+    catch (_) { mr = new MediaRecorder(stream); }
+    const sess = { mr, stream, chunks: [], t0: Date.now(), t1: 0 };
+    sess.done = new Promise(r => sess.resolve = r);
+    mr.ondataavailable = e => { if (e.data && e.data.size) sess.chunks.push(e.data); };
+    mr.onstop = () => this.save(sess);
+    mr.start(1000);
+    this.sess = sess; this.paint(); this.timer = setInterval(() => this.paint(), 1000);
+    return true;
+  },
+  stop() {
+    const sess = this.sess; this.on = false; this.sess = null; clearInterval(this.timer); this.paint();
+    if (!sess) return Promise.resolve();
+    sess.t1 = Date.now();
+    try { if (sess.mr.state !== 'inactive') sess.mr.stop(); else this.save(sess); } catch (_) { this.save(sess); }
+    sess.stream.getTracks().forEach(t => t.stop());
+    return Promise.race([sess.done, new Promise(r => setTimeout(r, 4000))]);
+  },
+  async save(sess) {
+    if (sess.saved) return; sess.saved = true;
+    try {
+      const dur = ((sess.t1 || Date.now()) - sess.t0) / 1000;
+      if (!sess.chunks.length || dur < 1) return;
+      const type = sess.mr.mimeType || sess.chunks[0].type || 'audio/webm';
+      await DB.putClip({ id: uid(), bookId: 'draft', blob: new Blob(sess.chunks, { type }), mime: type, dur: Math.round(dur), at: sess.t0, uploaded: false, url: '' });
+      toast('🎧 녹음을 저장했어요. (' + fmtDur(dur) + ')');
+      if (state.view === 'read') paintDraftClips();
+    } catch (_) { toast('녹음을 저장하지 못했어요. 저장 공간을 확인해 주세요.', 5000); }
+    finally { sess.resolve(); }
+  },
+  paint() { const el = $('#recState'); if (el) el.textContent = this.on && this.sess ? '● 녹음 중 ' + fmtDur((Date.now() - this.sess.t0) / 1000) : ''; }
+};
+
+/* 녹음 목록 그리기 (재생 · 기기에 저장 · 드라이브 상태) */
+const objUrls = new Set();
+function freeUrls() { objUrls.forEach(u => URL.revokeObjectURL(u)); objUrls.clear(); }
+function clipHtml(c, i, title) {
+  const u = URL.createObjectURL(c.blob); objUrls.add(u);
+  const cloud = c.url ? `<small>☁️ <a href="${esc(c.url)}" target="_blank" rel="noopener">드라이브에 저장됨</a></small>`
+    : c.tooBig ? '<small class="muted">파일이 커서 드라이브에는 못 올렸어요. [💾 저장]을 눌러 주세요.</small>'
+    : driveOn() && c.bookId !== 'draft' ? '<small class="muted">☁️ 드라이브 저장 대기 중</small>' : '';
+  return `<div class="clip"><div class="row between"><b>🎧 ${i + 1}번 녹음 · ${fmtDur(c.dur)}</b>
+    <span class="row" style="gap:6px"><a class="btn alt sm" href="${u}" download="${esc(fileName(title) + '_녹음' + (i + 1) + '.' + extOf(c.mime))}">💾 저장</a>
+    <button class="btn alt sm" data-act="delClip" data-id="${esc(c.id)}" aria-label="녹음 지우기">🗑️</button></span></div>
+    <audio controls preload="metadata" src="${u}"></audio>${cloud}</div>`;
+}
+async function paintDraftClips() {
+  const el = $('#draftClips'); if (!el) return;
+  const cs = await DB.clips('draft'); freeUrls();
+  el.innerHTML = cs.length ? `<div class="card stack"><div style="font-weight:800">🎧 녹음한 목소리 (${cs.length}개)</div>
+    ${cs.map((c, i) => clipHtml(c, i, $('#rdTitle').value.trim())).join('')}
+    <small class="muted">[이야기 만들기]를 누르면 이 책에 함께 저장돼요.</small></div>` : '';
+}
+async function paintBookClips(b) {
+  const el = $('#bookClips'); if (!el || !b) return;
+  const cs = await DB.clips(b.id); freeUrls();
+  if (state.book !== b || state.view !== 'book') return;
+  el.innerHTML = cs.length ? `<div class="card stack"><div style="font-weight:800">🎧 읽어 준 목소리</div>
+    ${cs.map((c, i) => clipHtml(c, i, b.analysis?.title || b.title)).join('')}</div>` : '';
+}
+const blobToB64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1] || ''); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+
 const tts = {
   ok: 'speechSynthesis' in window,
   speak(text) {
@@ -363,7 +476,7 @@ const tts = {
 const autoSay = t => { if (cfg.autoSpeak) tts.speak(t); };
 
 /* ============================== 이미지 줄이기(저장 공간 절약) ============================== */
-function shrink(mime, b64, maxW = 720, q = 0.78) {
+function shrink(mime, b64, maxW = 1280, q = 0.9) {
   return new Promise(res => {
     const raw = 'data:' + mime + ';base64,' + b64, img = new Image();
     img.onload = () => {
@@ -416,6 +529,29 @@ const sync = {
     } finally { this.busy = false; paintSync(); }
   }
 };
+/* 녹음 파일 드라이브 업로드: 책에 붙은 녹음 중 아직 안 올린 것을 하나씩 보냅니다. */
+const driveOn = () => cfg.driveAudio && sync.on();
+const uploader = {
+  busy: false,
+  async run() {
+    if (this.busy || !driveOn() || !navigator.onLine) return;
+    this.busy = true;
+    try {
+      const books = new Map((await DB.all()).map(b => [b.id, b]));
+      const all = (await DB.allClips()).filter(c => books.has(c.bookId));
+      for (const c of all.filter(c => !c.uploaded)) {
+        const b = books.get(c.bookId), n = all.filter(x => x.bookId === c.bookId).indexOf(c) + 1;
+        if (c.blob.size > 10 * 1024 * 1024) { c.uploaded = true; c.tooBig = true; await DB.putClip(c); continue; }
+        const r = await api('audio', { clipId: c.id, bookId: c.bookId, title: b.analysis?.title || b.title, nickname: cfg.nick || '친구', mime: c.mime, data: await blobToB64(c.blob), dur: c.dur, at: c.at, n }, 180000);
+        c.uploaded = true; c.url = r.url || ''; await DB.putClip(c);
+        if (state.view === 'book' && state.book?.id === c.bookId) paintBookClips(state.book);
+      }
+    } catch (e) { toast('녹음 드라이브 저장 실패: ' + e.message, 6500); }
+    finally { this.busy = false; }
+  }
+};
+const kick = () => { sync.flush(); uploader.run(); };
+
 const bookSnap = b => ({ type: 'book', book: {
   id: b.id, title: b.analysis?.title || b.title, level: b.level, createdAt: b.createdAt, text: b.text,
   summary: b.analysis?.summary || '', theme: b.analysis?.theme || '',
@@ -438,7 +574,8 @@ function paintSync() {
 }
 
 /* ============================== 상태·화면 이동 ============================== */
-const state = { view: 'home', book: null, slide: 0, quiz: null, drawing: false, drawIdx: -1, imagineBusy: false };
+const state = { view: 'home', book: null, slide: 0, quiz: null, imagineBusy: false };
+const drawing = new Set();   // 지금 그리고 있는 그림: 책ID(이야기 그림) / 책ID+':c'(이어 쓴 이야기 그림)
 const stack = ['home'];
 history.replaceState({ i: 0 }, '');
 function go(v) { stack.push(v); history.pushState({ i: stack.length - 1 }, ''); showView(v); }
@@ -447,7 +584,7 @@ addEventListener('popstate', e => { const i = (e.state && e.state.i) || 0; stack
 
 const ENTER = { home: renderHome, read: enterRead, book: renderBook, slides: renderSlides, quiz: renderQuiz, imagine: enterImagine, settings: renderSettings };
 function showView(v) {
-  mic.stop(); tts.stop();
+  mic.stop(); tts.stop(); freeUrls();
   $$('.view').forEach(s => s.hidden = s.id !== 'v-' + v);
   state.view = v; $('#ttl').textContent = TITLES[v]; $('#btnBack').hidden = v === 'home';
   document.body.dataset.lv = state.book && ['book', 'slides', 'quiz', 'imagine'].includes(v) ? state.book.level : '';
@@ -473,6 +610,7 @@ async function renderHome() {
       : `<div class="empty"><div class="em">📖</div><p>아직 읽은 책이 없어요.<br>위 버튼을 눌러 첫 책을 읽어 볼까요?</p></div>`}`;
 }
 const coverEmoji = b => b.analysis?.scenes?.[0]?.emoji || '📕';
+const coverOf = b => b.cover || b.images?.[0] || null;   // 예전 버전에서 만든 그림도 보여 주기
 const charStr = a => (a.characters || []).map(c => c.name + ': ' + c.look).join('; ');
 
 /* ============================== 읽기 ============================== */
@@ -482,20 +620,24 @@ function enterRead() {
   $('#lvSeg').innerHTML = Object.entries(LEVELS).map(([k, v]) =>
     `<button data-act="level" data-level="${k}" aria-pressed="${cfg.level === k}"><b>${v.icon}</b>${v.label}<br><small>${v.hint}</small></button>`).join('');
   updateCount();
-  const ios = /iP(hone|ad|od)/.test(navigator.userAgent);
-  $('#rdNote').textContent = !SRC ? '이 브라우저는 음성 인식을 지원하지 않아요. 키보드의 🎤 받아쓰기를 쓰거나 글을 직접 입력해 주세요.'
+  $('#recWrap').hidden = !recorder.ok; $('#chkRec').checked = cfg.recAudio;
+  paintDraftClips();
+  const ios = /iP(hone|ad|od)/.test(navigator.userAgent), android = /Android/.test(navigator.userAgent);
+  $('#rdNote').textContent = !SRC ? '이 브라우저는 음성 인식을 지원하지 않아요. 키보드의 🎤 받아쓰기를 쓰거나 글을 직접 입력해 주세요.' + (recorder.ok ? ' 녹음은 할 수 있어요.' : '')
     : ios ? '아이폰은 음성 인식이 불안정할 수 있어요. 잘 안 되면 키보드의 🎤 받아쓰기를 이용해 주세요.'
+    : android && cfg.recAudio ? '일부 안드로이드 기기는 녹음과 글자 받아쓰기를 동시에 못 해요. 글자가 나오지 않으면 [목소리도 녹음]을 끄고 다시 해 보세요.'
     : '조용한 곳에서 또박또박 읽으면 더 정확해요. 읽는 동안 화면은 켜져 있어요.';
 }
 function updateCount() { const n = $('#rdText').value.length; $('#rdCount').textContent = n ? n + '자' : ''; }
 function saveDraft() { LS.set('sb_draft', { title: $('#rdTitle').value, text: $('#rdText').value }); updateCount(); }
 
 async function makeStory() {
-  mic.stop();
+  await mic.stop();
   const text = $('#rdText').value.trim(), title = $('#rdTitle').value.trim();
   if (text.length < 20) { toast('조금 더 읽어 주세요. (20자 이상)'); return; }
-  const b = { id: uid(), title: title || '제목 없음', level: cfg.level, text, createdAt: Date.now(), analysis: null, images: {}, quiz: null, continuation: [], lead: null, choices: null, question: null };
+  const b = { id: uid(), title: title || '제목 없음', level: cfg.level, text, createdAt: Date.now(), analysis: null, cover: null, contImage: null, quiz: null, continuation: [], lead: null, choices: null, question: null };
   await DB.put(b); LS.del('sb_draft'); state.book = b;
+  for (const c of await DB.clips('draft')) { c.bookId = b.id; await DB.putClip(c); }   // 녹음을 이 책으로 옮기기
   await analyzeBook(b, true);
 }
 async function analyzeBook(b, fromRead) {
@@ -504,11 +646,14 @@ async function analyzeBook(b, fromRead) {
     let a;
     if (aiReady()) a = (await api('analyze', { title: b.title === '제목 없음' ? '' : b.title, text: b.text, level: b.level }, 120000)).data;
     else { await new Promise(r => setTimeout(r, 600)); a = demoAnalysis(b); }
-    Object.assign(b, { analysis: a, images: {}, quiz: null, continuation: [], lead: null, choices: null, question: null });
+    Object.assign(b, { analysis: a, images: {}, cover: null, contImage: null, quiz: null, continuation: [], lead: null, choices: null, question: null });
     if ((!b.title || b.title === '제목 없음') && a.title) b.title = a.title;
     await DB.put(b); state.book = b;
     record(fromRead ? 'read' : 'reread', b, { summary: a.summary, chars: b.text.length });
     if (fromRead) { stack.pop(); stack.push('book'); history.replaceState({ i: stack.length - 1 }, ''); showView('book'); } else renderBook();
+    unbusy();
+    if (aiReady() && !a.demo) drawCover(b);   // 이야기 전체를 담은 그림 1장을 바로 그리기
+    uploader.run();
   } catch (e) { toast(e.message, 5500); if (fromRead) goHome(); }
   finally { unbusy(); }
 }
@@ -518,7 +663,7 @@ function renderBook() {
   if (!a) { el.innerHTML = `<div class="card"><h2>${esc(b.title)}</h2><p>아직 이야기를 만들지 않았어요.</p><button class="btn block" data-act="analyzeNow">✨ 이야기 만들기</button></div>`; return; }
   el.innerHTML = `
     ${a.demo ? '<div class="note warn">샘플 체험 결과예요. 설정에서 AI를 연결하면 읽은 내용으로 만들어져요.</div>' : ''}
-    <div class="card hero"><div class="emoji">${esc(coverEmoji(b))}</div><h2>${esc(a.title || b.title)}</h2>
+    <div class="card hero" style="padding:12px 12px 18px"><div id="bookArt"></div><h2 style="margin-top:12px">${esc(a.title || b.title)}</h2>
       <p>${esc(a.summary)}</p>${a.theme ? `<p class="theme">💡 ${esc(a.theme)}</p>` : ''}</div>
     <div class="chips">${(a.characters || []).map(c => `<span class="chip">${esc(c.name)}</span>`).join('')}</div>
     <div class="stack">
@@ -526,27 +671,72 @@ function renderBook() {
       <button class="btn teal block big" data-act="quiz">❓ 퀴즈 풀기 ${b.quiz ? `<small>최근 ${b.quiz.score}/${b.quiz.total}</small>` : ''}</button>
       <button class="btn violet block big" data-act="imagine">✨ 이야기 이어가기 ${b.continuation?.length ? `<small>${b.continuation.length}장면</small>` : ''}</button>
     </div>
+    <div id="bookClips"></div>
     <details class="card"><summary>📝 읽은 내용 보기·고치기</summary>
       <textarea id="editText" rows="8" style="margin-top:10px">${esc(b.text)}</textarea>
       <p class="muted" style="font-size:.9rem">고친 뒤 다시 만들면 그림·퀴즈·이어 쓴 이야기가 새로 만들어져요.</p>
       <div class="row"><button class="btn alt" data-act="reanalyze">고쳐서 다시 만들기</button><button class="btn alt" data-act="del">🗑️ 책 지우기</button></div>
     </details>`;
+  paintBookArt(); paintBookClips(b);
 }
+
+/* ============================== 그림 1장 (이야기 전체 / 이어 쓴 이야기) ============================== */
+function artHtml(img, emoji, key, alt) {
+  return `<div class="pic art">${img ? `<img src="${img}" alt="${esc(alt)}">` : `<span>${esc(emoji)}</span>`}${drawing.has(key) ? '<span class="draw">🎨 그림 그리는 중… (20~60초)</span>' : ''}</div>`;
+}
+function artButtons(img, key, act, label, title) {
+  return `<div class="row" style="justify-content:center;margin-top:10px">
+    ${drawing.has(key) ? '' : aiReady() ? `<button class="btn ${img ? 'alt' : 'teal'}" data-act="${act}">${img ? '↻ 그림 다시 그리기' : label}</button>` : ''}
+    ${img ? `<a class="btn alt" href="${img}" download="${esc(fileName(title))}.jpg">💾 그림 저장</a>` : ''}</div>
+    ${!aiReady() ? '<p class="note">그림을 그리려면 설정에서 AI를 연결해 주세요.</p>' : ''}`;
+}
+function paintBookArt() {
+  const b = state.book, el = $('#bookArt'); if (!el || !b?.analysis) return;
+  const img = coverOf(b), t = b.analysis.title || b.title;
+  el.innerHTML = artHtml(img, coverEmoji(b), b.id, b.analysis.summary) + (b.analysis.demo ? '' : artButtons(img, b.id, 'drawCover', '🎨 이야기 그림 그리기', t));
+}
+function paintContArt() {
+  const b = state.book, el = $('#contArt'); if (!el || !b) return;
+  if (!b.continuation?.length) { el.innerHTML = ''; return; }
+  const key = b.id + ':c', img = b.contImage;
+  el.innerHTML = `<div class="card"><div style="font-weight:800;margin-bottom:8px">🖼️ 내가 만든 이야기 그림</div>
+    ${img || drawing.has(key) ? artHtml(img, '✨', key, '') : '<p class="muted" style="margin:0">지금까지 이어 쓴 이야기를 그림 한 장으로 그려 줄게요.</p>'}
+    ${artButtons(img, key, 'drawCont', '🎨 내 이야기 그림 그리기', (b.analysis.title || b.title) + '_내이야기')}</div>`;
+}
+function artChanged(b, field) {
+  if (state.book?.id !== b.id) return;
+  if (state.book !== b) state.book[field] = b[field];
+  if (state.view === 'book') paintBookArt(); else if (state.view === 'slides') renderSlides(); else if (state.view === 'imagine') paintContArt();
+}
+async function drawArt(b, kind) {
+  const key = kind === 'continue' ? b.id + ':c' : b.id, field = kind === 'continue' ? 'contImage' : 'cover', a = b.analysis;
+  if (!aiReady()) { toast('설정에서 AI를 먼저 연결해 주세요.'); return; }
+  if (drawing.has(key) || !a) return;
+  drawing.add(key); artChanged(b, field);
+  try {
+    const payload = kind === 'continue'
+      ? { kind, title: a.title || b.title, summary: a.summary, story: b.continuation.map(s => s.story).join(' ').slice(-2400), style: a.style, characters: charStr(a) }
+      : { kind, title: a.title || b.title, summary: a.summary, prompt: a.cover_prompt || '', moments: a.scenes.map(s => s.caption), style: a.style, characters: charStr(a) };
+    const r = await api('image', payload, 180000);
+    b[field] = await shrink(r.mime, r.data);
+    if (field === 'cover') b.images = {};
+    await DB.put(b);
+  } catch (e) { toast(e.message, 5500); }
+  finally { drawing.delete(key); artChanged(b, field); }
+}
+const drawCover = b => drawArt(b, 'story');
 
 /* ============================== 슬라이드 ============================== */
 function renderSlides() {
   const b = state.book, a = b.analysis; if (!a) return go('book');
   const list = ['cover', ...a.scenes.map((_, i) => i), 'end'];
   const n = state.slide = Math.max(0, Math.min(state.slide || 0, list.length - 1)), it = list[n];
-  const missing = a.scenes.filter((_, i) => !b.images[i]).length;
+  const img = coverOf(b), busyNow = drawing.has(b.id);
+  const picOf = (emoji, badge) => `<div class="pic">${img ? `<img src="${img}" alt="">${badge ? `<span class="emo">${esc(emoji)}</span>` : ''}` : esc(emoji)}${busyNow ? '<span class="draw">🎨 그림 그리는 중…</span>' : ''}</div>`;
   let pic, cap, say;
-  const picOf = i => {
-    const sc = a.scenes[i], img = b.images[i];
-    return `<div class="pic">${img ? `<img src="${img}" alt="${esc(sc.caption)}">` : esc(sc.emoji)}${state.drawing && state.drawIdx === i ? '<span class="draw">🎨 그리는 중…</span>' : ''}</div>`;
-  };
-  if (it === 'cover') { pic = `<div class="pic">${b.images[0] ? `<img src="${b.images[0]}" alt="">` : esc(coverEmoji(b))}${state.drawing ? `<span class="draw">🎨 그림 그리는 중… (${Object.keys(b.images).length}/${a.scenes.length})</span>` : ''}</div>`; cap = `${esc(a.title || b.title)}<br><span class="sub">${esc(a.theme || '')}</span>`; say = (a.title || b.title) + '. ' + (a.theme || ''); }
+  if (it === 'cover') { pic = picOf(coverEmoji(b), false); cap = `${esc(a.title || b.title)}<br><span class="sub">${esc(a.theme || '')}</span>`; say = (a.title || b.title) + '. ' + (a.theme || ''); }
   else if (it === 'end') { pic = `<div class="pic">🌈</div>`; cap = `끝! 다음 이야기는 어떻게 될까요?`; say = '끝! 다음 이야기는 어떻게 될까요?'; }
-  else { pic = picOf(it); cap = esc(a.scenes[it].caption); say = a.scenes[it].caption; }
+  else { pic = picOf(a.scenes[it].emoji, true); cap = esc(a.scenes[it].caption); say = a.scenes[it].caption; }
   $('#v-slides').innerHTML = `
     <div class="slide" id="slideBox">${pic}<div class="cap">${cap}</div></div>
     <div class="dots" aria-label="${n + 1} / ${list.length}">${list.map((_, i) => `<i class="${i === n ? 'on' : ''}"></i>`).join('')}</div>
@@ -554,32 +744,15 @@ function renderSlides() {
       <button class="btn big" data-act="${it === 'end' ? 'imagine' : 'next'}">${it === 'end' ? '✨ 이어가기' : '다음 →'}</button></div>
     <div class="row" style="margin-top:14px;justify-content:center">
       <button class="btn alt" data-act="say" data-say="${esc(say)}">🔊 듣기</button>
-      ${missing && !state.drawing ? `<button class="btn teal" data-act="draw">🎨 그림 그리기 (${missing}장)</button>` : ''}
-      ${typeof it === 'number' && !state.drawing && b.images[it] ? `<button class="btn alt" data-act="redraw" data-i="${it}">↻ 다시 그리기</button>` : ''}
+      ${!img && !busyNow && aiReady() && !a.demo ? `<button class="btn teal" data-act="draw">🎨 이야기 그림 그리기</button>` : ''}
     </div>
-    ${!aiReady() && missing ? '<p class="note">그림을 그리려면 설정에서 AI를 연결해 주세요. 지금은 이모지 그림이에요.</p>' : ''}`;
+    ${!aiReady() && !img ? '<p class="note">그림을 그리려면 설정에서 AI를 연결해 주세요. 지금은 이모지 그림이에요.</p>' : ''}`;
   const box = $('#slideBox'); let x0 = null;
   box.addEventListener('touchstart', e => x0 = e.touches[0].clientX, { passive: true });
   box.addEventListener('touchend', e => { if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 50) slideTo(state.slide + (dx < 0 ? 1 : -1), list.length); }, { passive: true });
   if (state.slideSpeak) { state.slideSpeak = false; autoSay(say); }
 }
 function slideTo(n, len) { if (n < 0 || n >= len) return; state.slide = n; state.slideSpeak = true; renderSlides(); }
-async function drawScenes(only) {
-  const b = state.book, a = b.analysis;
-  if (!aiReady()) { toast('설정에서 AI를 먼저 연결해 주세요.'); return; }
-  if (state.drawing) return; state.drawing = true;
-  const targets = only != null ? [only] : a.scenes.map((_, i) => i).filter(i => !b.images[i]);
-  const refresh = () => { if (state.view === 'slides' && state.book === b) renderSlides(); };
-  try {
-    for (const i of targets) {
-      state.drawIdx = i; refresh();
-      const r = await api('image', { scene: a.scenes[i].image_prompt || a.scenes[i].caption, style: a.style, characters: charStr(a) }, 120000);
-      b.images[i] = await shrink(r.mime, r.data); await DB.put(b); refresh();
-    }
-  } catch (e) { toast(e.message, 5500); }
-  finally { state.drawing = false; state.drawIdx = -1; refresh(); }
-}
-
 /* ============================== 퀴즈 ============================== */
 function startQuiz() {
   const qs = state.book.analysis.quiz.map(q => {
@@ -633,17 +806,15 @@ async function nextQuestion() {
 /* ============================== 이야기 이어가기 ============================== */
 function enterImagine() {
   const b = state.book; if (!b || !b.analysis) return go('book');
-  const ck = $('#chkDraw'); ck.disabled = !aiReady(); ck.checked = aiReady() && !!cfg.draw;   // AI 연결 전에는 끄고, 사용자의 저장된 선택은 건드리지 않음
   $('#qChips').innerHTML = (b.analysis.imagine || []).map(q => `<button data-act="ask" data-q="${esc(q)}">💭 ${esc(q)}</button>`).join('');
-  paintSegs(); paintChoices();
+  paintSegs(); paintChoices(); paintContArt();
   if (!b.choices && !b.continuation.length) loadChoices();
 }
 function paintSegs() {
   const b = state.book, el = $('#segs'); if (!el) return;
   el.innerHTML = (b.continuation || []).map((s, i) => `
     <div class="seg-item">${s.idea ? `<div class="idea">🗣️ ${esc(s.idea)}</div>` : ''}
-      <div class="pic">${s.image ? `<img src="${s.image}" alt="">` : esc(s.emoji || '✨')}${s.drawing ? '<span class="draw">🎨 그리는 중…</span>' : ''}</div>
-      <div class="txt">${esc(s.story)} <button class="btn alt" style="min-height:40px;padding:0 12px" data-act="say" data-say="${esc(s.story)}" aria-label="소리로 듣기">🔊</button></div></div>`).join('');
+      <div class="txt"><b>${esc(s.emoji || '✨')}</b>${esc(s.story)} <button class="btn alt" style="min-height:40px;padding:0 12px" data-act="say" data-say="${esc(s.story)}" aria-label="소리로 듣기">🔊</button></div></div>`).join('');
 }
 function paintChoices() {
   const b = state.book, el = $('#choicePanel'); if (!el) return;
@@ -669,45 +840,33 @@ async function continueStory(idea, via = 'typed') {
     let r;
     if (aiReady()) r = await api('continue', continuePayload(b, idea));
     else r = { story: `"${idea}" 라는 멋진 생각에 모두 손뼉을 쳤어요. 거북이는 씩씩하게 한 걸음, 또 한 걸음 나아갔어요. 그리고 숲속에는 새로운 이야기가 시작되었지요.`, image_prompt: '', emoji: '🌳', question: '이 다음엔 누가 나타날까요?', choices: [{ emoji: '🦊', text: '꾀 많은 여우가 나타나요' }, { emoji: '🌈', text: '무지개 다리가 생겨요' }, { emoji: '🏡', text: '모두 함께 집으로 돌아가요' }] };
-    const seg = { idea, story: r.story, emoji: r.emoji, image_prompt: r.image_prompt, image: null, drawing: false };
+    const seg = { idea, story: r.story, emoji: r.emoji };
     b.continuation.push(seg); b.choices = r.choices; b.question = r.question; await DB.put(b);
     record('story', b, { idea, story: r.story, via });
     $('#ideaText').value = '';
-    const wantDraw = $('#chkDraw').checked && aiReady();
-    if (aiReady()) { cfg.draw = wantDraw; saveCfg(); }
-    state.imagineBusy = false; paintSegs(); paintChoices(); autoSay(seg.story);
-    if (wantDraw && seg.image_prompt) drawSeg(b, seg);
+    state.imagineBusy = false; paintSegs(); paintChoices(); paintContArt(); autoSay(seg.story);
     $('#choicePanel').scrollIntoView({ behavior: 'smooth', block: 'center' });
   } catch (e) { state.imagineBusy = false; paintChoices(); toast(e.message, 5500); }
 }
-async function drawSeg(b, seg) {
-  seg.drawing = true; if (state.book === b) paintSegs();
-  try {
-    const r = await api('image', { scene: seg.image_prompt, style: b.analysis.style, characters: charStr(b.analysis) }, 120000);
-    seg.image = await shrink(r.mime, r.data);
-  } catch (e) { toast(e.message, 4500); }
-  seg.drawing = false; await DB.put(b); if (state.book === b && state.view === 'imagine') paintSegs();
-}
-
 /* ============================== 설정 ============================== */
 function renderSettings() {
   $('#setUrl').value = cfg.url; $('#setCode').value = cfg.code; $('#setNick').value = cfg.nick;
-  $('#setSpeak').checked = cfg.autoSpeak; $('#setBackup').checked = cfg.backup; $('#setConsent').checked = cfg.consent;
+  $('#setSpeak').checked = cfg.autoSpeak; $('#setBackup').checked = cfg.backup; $('#setConsent').checked = cfg.consent; $('#setDrive').checked = cfg.driveAudio;
   $('#urlWarn').hidden = !cfg.url || okUrl(cfg.url);
   paintSync();
 }
 function onSettingsInput() {
   const u = $('#setUrl').value.trim(); $('#urlWarn').hidden = !u || okUrl(u);
   cfg.url = u; cfg.code = $('#setCode').value; cfg.nick = $('#setNick').value.trim();
-  cfg.autoSpeak = $('#setSpeak').checked; cfg.backup = $('#setBackup').checked; cfg.consent = $('#setConsent').checked;
-  saveCfg(); paintSync(); sync.flush();
+  cfg.autoSpeak = $('#setSpeak').checked; cfg.backup = $('#setBackup').checked; cfg.consent = $('#setConsent').checked; cfg.driveAudio = $('#setDrive').checked;
+  saveCfg(); paintSync(); kick();
 }
 async function testConn() {
   onSettingsInput(); const st = $('#connState');
   if (!okUrl(cfg.url)) { st.textContent = '주소 형식을 확인해 주세요.'; return; }
   if (!cfg.code) { st.textContent = '접속 코드를 입력해 주세요.'; return; }
   st.textContent = '연결하는 중…';
-  try { const r = await api('ping', { deep: true }, 60000); st.textContent = `✅ 연결 성공! AI 모델: ${r.textModel} / 그림 모델: ${r.imageModel}` + (r.sheet ? ` / 기록 시트: ${r.sheet}` : ' / ⚠️ 기록할 시트가 없어요(Code.gs를 시트에서 열었는지 확인)'); paintSync(); sync.flush(); }
+  try { const r = await api('ping', { deep: true }, 60000); st.textContent = `✅ 연결 성공! AI 모델: ${r.textModel} / 그림 모델: ${r.imageModel}` + (r.sheet ? ` / 기록 시트: ${r.sheet}` : ' / ⚠️ 기록할 시트가 없어요(Code.gs를 시트에서 열었는지 확인)'); paintSync(); kick(); }
   catch (e) { st.textContent = '❌ ' + e.message; }
 }
 
@@ -742,20 +901,34 @@ const ACT = {
   newBook: () => go('read'),
   openBook: async el => { const b = (await DB.all()).find(x => x.id === el.dataset.id); if (!b) return; state.book = b; state.slide = 0; go('book'); },
   level: el => { cfg.level = el.dataset.level; saveCfg(); $$('#lvSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === el))); },
-  mic: el => mic.toggle($('#rdText'), el, $('#rdInterim')),
+  mic: el => mic.toggle($('#rdText'), el, $('#rdInterim'), true),
   micIdea: el => mic.toggle($('#ideaText'), el, $('#ideaInterim')),
   sample: () => { $('#rdText').value = SAMPLE_TEXT; if (!$('#rdTitle').value) $('#rdTitle').value = '토끼와 거북이'; saveDraft(); },
-  clearRead: () => { mic.stop(); $('#rdText').value = ''; $('#rdTitle').value = ''; saveDraft(); },
+  clearRead: async () => {
+    await mic.stop(); $('#rdText').value = ''; $('#rdTitle').value = ''; saveDraft();
+    const cs = await DB.clips('draft');
+    if (cs.length && confirm(`녹음한 목소리 ${cs.length}개도 지울까요?`)) { for (const c of cs) await DB.delClip(c.id); paintDraftClips(); }
+  },
+  delClip: async el => {
+    if (!confirm('이 녹음을 지울까요? 되돌릴 수 없어요.')) return;
+    await DB.delClip(el.dataset.id);
+    state.view === 'read' ? paintDraftClips() : paintBookClips(state.book);
+  },
   makeStory,
   analyzeNow: () => analyzeBook(state.book, false),
   reanalyze: () => { const t = $('#editText').value.trim(); if (t.length < 20) return toast('내용이 너무 짧아요.'); if (!confirm('그림·퀴즈·이어 쓴 이야기가 새로 만들어져요. 계속할까요?')) return; state.book.text = t; analyzeBook(state.book, false); },
-  del: async () => { if (!confirm('이 책을 지울까요? 되돌릴 수 없어요.')) return; await DB.del(state.book.id); state.book = null; goHome(); },
+  del: async () => {
+    if (!confirm('이 책(그림·녹음 포함)을 지울까요? 되돌릴 수 없어요.')) return;
+    const id = state.book.id; await DB.del(id); for (const c of await DB.clips(id)) await DB.delClip(c.id);
+    state.book = null; goHome();
+  },
   slides: () => { state.slide = 0; state.slideSpeak = cfg.autoSpeak; state.view === 'slides' ? renderSlides() : go('slides'); },
   prev: () => slideTo(state.slide - 1, state.book.analysis.scenes.length + 2),
   next: () => slideTo(state.slide + 1, state.book.analysis.scenes.length + 2),
   say: el => tts.speak(el.dataset.say),
-  draw: () => drawScenes(null),
-  redraw: el => drawScenes(+el.dataset.i),
+  draw: () => drawCover(state.book),
+  drawCover: () => drawCover(state.book),
+  drawCont: () => drawArt(state.book, 'continue'),
   quiz: () => { startQuiz(); go('quiz'); if (cfg.autoSpeak) sayQuestion(); },
   retryQuiz: () => { startQuiz(); renderQuiz(); if (cfg.autoSpeak) sayQuestion(); },
   sayQ: sayQuestion,
@@ -765,9 +938,9 @@ const ACT = {
   pickChoice: el => continueStory(state.book.choices[+el.dataset.i].text, 'choice'),
   ask: el => { $('#ideaText').value = el.dataset.q; $('#ideaText').focus(); },
   sendIdea: () => { mic.stop(); continueStory($('#ideaText').value); },
-  resetStory: async () => { if (!confirm('이어 쓴 이야기를 지우고 처음부터 상상할까요?')) return; const b = state.book; Object.assign(b, { continuation: [], choices: null, lead: null, question: null }); await DB.put(b); record('book', b); paintSegs(); paintChoices(); loadChoices(); },
+  resetStory: async () => { if (!confirm('이어 쓴 이야기를 지우고 처음부터 상상할까요?')) return; const b = state.book; Object.assign(b, { continuation: [], choices: null, lead: null, question: null, contImage: null }); await DB.put(b); record('book', b); paintSegs(); paintChoices(); paintContArt(); loadChoices(); },
   testConn,
-  syncNow: () => { if (!sync.on()) return toast('시트 기록을 켜고, 보호자 동의와 AI 연결을 먼저 해 주세요.'); sync.err = ''; sync.flush(); },
+  syncNow: () => { if (!sync.on()) return toast('시트 기록을 켜고, 보호자 동의와 AI 연결을 먼저 해 주세요.'); sync.err = ''; kick(); },
   uploadAll: async () => {
     if (!sync.on()) return toast('시트 기록을 켜고, 보호자 동의와 AI 연결을 먼저 해 주세요.');
     const books = (await DB.all()).filter(b => b.analysis && !b.analysis.demo);
@@ -780,18 +953,19 @@ const ACT = {
     try { await navigator.clipboard.writeText(link); toast('링크를 복사했어요. 보호자에게 보내 주세요.'); }
     catch (_) { prompt('아래 링크를 복사해 보호자에게 보내 주세요.', link); }
   },
-  wipe: async () => { if (!confirm('이 기기에 저장된 모든 책을 지울까요? 되돌릴 수 없어요.')) return; await DB.clear(); state.book = null; toast('모두 지웠어요.'); }
+  wipe: async () => { if (!confirm('이 기기에 저장된 모든 책과 녹음을 지울까요? 되돌릴 수 없어요.')) return; await mic.stop(); await DB.clear(); await DB.clearClips(); state.book = null; toast('모두 지웠어요.'); }
 };
 document.addEventListener('click', e => { const el = e.target.closest('[data-act]'); if (el && ACT[el.dataset.act]) ACT[el.dataset.act](el, e); });
 ['#rdTitle', '#rdText'].forEach(s => $(s).addEventListener('input', saveDraft));
-['#setUrl', '#setCode', '#setNick', '#setSpeak', '#setBackup', '#setConsent'].forEach(s => $(s).addEventListener('input', onSettingsInput));
+['#setUrl', '#setCode', '#setNick', '#setSpeak', '#setBackup', '#setConsent', '#setDrive'].forEach(s => $(s).addEventListener('input', onSettingsInput));
+$('#chkRec').addEventListener('change', e => { cfg.recAudio = e.target.checked; saveCfg(); });
 addEventListener('pagehide', () => { mic.stop(); tts.stop(); });
 if (tts.ok) speechSynthesis.getVoices();   // 일부 브라우저에서 목소리 목록을 미리 불러오기
 
-addEventListener('online', () => sync.flush());
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync.flush(); });
+addEventListener('online', kick);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') kick(); });
 showView('home');
-sync.flush();
+kick();
 </script>
 </body>
 </html>
